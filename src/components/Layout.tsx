@@ -161,7 +161,7 @@ const Footer = () => {
           <ul className="space-y-4 text-sm opacity-70">
             <li>서울특별시 서울시 마포구 신촌로 200-1</li>
             <li>대표번호: 02-363-8777</li>
-            <li>이메일: contact@ksis1.org</li>
+            <li>이메일: rebornsenior.web@gmail.com</li>
           </ul>
         </div>
 
