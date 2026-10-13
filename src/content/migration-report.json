@@ -1,0 +1,37 @@
+[
+  {
+    "source": "src\\pages\\Project\\forum\\post1.ts",
+    "target": "src/content/forum/20260614-youtube-growth.json",
+    "blocks": 11
+  },
+  {
+    "source": "src\\pages\\Project\\forum\\post2.ts",
+    "target": "src/content/forum/20260612-story-business.json",
+    "blocks": 16
+  },
+  {
+    "source": "src\\pages\\Project\\education\\post1.ts",
+    "target": "src/content/education/20250719-ai-saas-project.json",
+    "blocks": 13
+  },
+  {
+    "source": "src\\pages\\Project\\education\\post2.ts",
+    "target": "src/content/education/202606-ai-education.json",
+    "blocks": 26
+  },
+  {
+    "source": "src\\pages\\Project\\community\\foodculture\\posts\\post1.ts",
+    "target": "src/content/foodculture/202606-foodculture-meeting.json",
+    "blocks": 13
+  },
+  {
+    "source": "src\\pages\\Project\\community\\bookclub\\posts\\post1.ts",
+    "target": "src/content/bookclub/20260613-youtube-bookclub.json",
+    "blocks": 7
+  },
+  {
+    "source": "src\\pages\\Project\\community\\local\\posts\\post1.ts",
+    "target": "src/content/local/20260625-wind-culture.json",
+    "blocks": 16
+  }
+]

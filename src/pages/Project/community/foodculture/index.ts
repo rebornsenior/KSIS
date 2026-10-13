@@ -1,5 +1,3 @@
-import { post1 } from './posts/post1';
+import { loadPosts } from '../../../../content/load';
 
-export const foodculturePosts = [
-  post1
-];
+export const foodculturePosts = loadPosts('foodculture');

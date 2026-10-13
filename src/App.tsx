@@ -7,6 +7,7 @@ import Archive from './pages/Archive';
 import CalendarPage from './pages/CalendarPage';
 import Community from './pages/Board';
 import { ROUTES } from './constants';
+import ContentPreview from './pages/ContentPreview';
 
 function ScrollToTop() {
   const { pathname, search } = useLocation();
@@ -31,6 +32,7 @@ export default function App() {
           <Route path={ROUTES.ARCHIVE} element={<Archive />} />
           <Route path={ROUTES.CALENDAR} element={<CalendarPage />} />
           <Route path={ROUTES.COMMUNITY} element={<Community />} />
+          <Route path="/content-preview" element={<ContentPreview />} />
         </Route>
       </Routes>
     </HashRouter>

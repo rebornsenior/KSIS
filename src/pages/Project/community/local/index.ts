@@ -1,5 +1,3 @@
-import { post1 } from './posts/post1';
+import { loadPosts } from '../../../../content/load';
 
-export const localPosts = [
-  post1
-];
+export const localPosts = loadPosts('local');

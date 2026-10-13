@@ -1,7 +1,3 @@
-import { post1 } from './post1';
-import { post2 } from './post2';
+import { loadPosts } from '../../../content/load';
 
-export const forumsData = [
-  post1,
-  post2
-];
+export const forumsData = loadPosts('forum');

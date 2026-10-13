@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
+import ContentLink from '../../components/ContentLink';
+import { textAlignment } from '../../content/alignment';
 import { Soup, BookOpen, Compass, FileText, Users, User, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 
-function GallerySlider({ images }: { images: Array<{ url: string; caption?: string }> }) {
+export function GallerySlider({ images }: { images: Array<{ url: string; caption?: string }>; key?: number }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const prevSlide = (e: React.MouseEvent) => {
@@ -334,15 +336,18 @@ function ProjectPortal({ onSelectCategory }: ProjectPortalProps) {
 
 export default function ProjectComponent({
   selectedCategory: propCategory,
-  setSelectedCategory: propSetSelectedCategory
+  setSelectedCategory: propSetSelectedCategory,
+  previewPost
 }: {
   selectedCategory?: string | null;
   setSelectedCategory?: (cat: string | null) => void;
+  previewPost?: any;
 }) {
   const [internalCategory, setInternalCategory] = useState<string | null>(null);
   const selectedCategory = propCategory !== undefined ? propCategory : internalCategory;
   const setSelectedCategory = propSetSelectedCategory || setInternalCategory;
-  const [selectedExpert, setSelectedExpert] = useState<any | null>(null);
+  const [storedExpert, setSelectedExpert] = useState<any | null>(null);
+  const selectedExpert = previewPost || storedExpert;
 
   const categories = [
     { id: 'food', name: '식문화', icon: Soup, color: '#98b7a5' },
@@ -434,7 +439,7 @@ export default function ProjectComponent({
                       <h4 
                         key={idx} 
                         className="text-lg md:text-2xl font-extrabold text-[#002147] border-l-4 pl-3.5 md:pl-4 py-0.5 mt-8 first:mt-0"
-                        style={{ borderColor: COLORS.gold }}
+                        style={{ borderColor: COLORS.gold, ...textAlignment(block.align) }}
                       >
                         {block.text}
                       </h4>
@@ -443,17 +448,20 @@ export default function ProjectComponent({
                   if (block.type === 'text') {
                     return (
                       <p 
-                        key={idx} 
+                        key={idx} style={textAlignment(block.align)}
                         className="text-slate-600 text-sm md:text-base leading-relaxed md:leading-loose font-medium break-keep whitespace-pre-line"
                       >
                         {block.text}
                       </p>
                     );
                   }
+                  if (block.type === 'link') {
+                    return <ContentLink key={idx} url={block.url} text={block.text} align={block.align} />;
+                  }
                   if (block.type === 'quote') {
                     return (
                       <div 
-                        key={idx}
+                        key={idx} style={textAlignment(block.align)}
                         className="my-6 py-4 px-6 bg-slate-50 text-[#002147] font-bold text-sm md:text-base leading-relaxed md:leading-loose whitespace-pre-line rounded-2xl border-l-4 border-amber-500 select-none"
                       >
                         {block.text}

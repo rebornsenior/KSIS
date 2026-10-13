@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
 import { BookOpen, Calendar, Mail, FileText, Award, Layers, X } from 'lucide-react';
-import { educationsData } from './education';
+import { educationsData } from './education/index';
+import { GallerySlider } from './Project';
+import ContentLink from '../../components/ContentLink';
+import { textAlignment } from '../../content/alignment';
 
 interface EducationCardProps {
   clas: any;
@@ -97,8 +100,9 @@ function EducationCard({ clas, categories, setSelectedClass }: EducationCardProp
   );
 }
 
-export default function EducationComponent() {
-  const [selectedClass, setSelectedClass] = useState<any | null>(null);
+export default function EducationComponent({ previewPost }: { previewPost?: any } = {}) {
+  const [storedClass, setSelectedClass] = useState<any | null>(null);
+  const selectedClass = previewPost || storedClass;
 
   const categories = [
     { id: 'digital', name: '실무 교육', icon: BookOpen, color: '#0d9488' },
@@ -168,7 +172,7 @@ export default function EducationComponent() {
                       <h2 
                         key={idx} 
                         className="text-base md:text-xl font-extrabold text-[#002147] border-l-4 pl-3.5 md:pl-4 py-0.5 mt-8 first:mt-0"
-                        style={{ borderColor: COLORS.gold }}
+                        style={{ borderColor: COLORS.gold, ...textAlignment(block.align) }}
                       >
                         {block.text}
                       </h2>
@@ -177,22 +181,28 @@ export default function EducationComponent() {
                   if (block.type === 'text') {
                     return (
                       <p 
-                        key={idx} 
+                        key={idx} style={textAlignment(block.align)}
                         className="text-slate-600 text-[17px] md:text-[18.5px] leading-relaxed md:leading-loose font-medium break-keep whitespace-pre-line"
                       >
                         {block.text}
                       </p>
                     );
                   }
+                  if (block.type === 'link') {
+                    return <ContentLink key={idx} url={block.url} text={block.text} align={block.align} />;
+                  }
                   if (block.type === 'quote') {
                     return (
                       <div 
-                        key={idx}
+                        key={idx} style={textAlignment(block.align)}
                         className="my-6 p-5 md:p-7 rounded-none border-l-[5px] border-[#002147] text-slate-800 italic font-semibold text-xs md:text-sm leading-relaxed md:leading-loose bg-slate-100/50 border border-slate-200/30 whitespace-pre-line"
                       >
                         {block.text}
                       </div>
                     );
+                  }
+                  if (block.type === 'gallery') {
+                    return <GallerySlider key={idx} images={block.images || []} />;
                   }
                   if (block.type === 'image') {
                     return (
