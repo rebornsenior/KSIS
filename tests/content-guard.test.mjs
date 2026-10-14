@@ -7,7 +7,7 @@ const source = readFileSync(new URL('../public/admin/content-guard.js', import.m
 function fixture({draft = false, fail = false} = {}) {
   const data = {name:'시험 제목',date:'2026.10.14'};
   const context = {
-    window:{}, localStorage:{getItem:()=>JSON.stringify({token:'mock'})},
+    window:{alert:message=>assert.equal(typeof message,'string')}, localStorage:{getItem:()=>JSON.stringify({token:'mock'})},
     AbortSignal, TextDecoder, Uint8Array, atob,
     fetch:async url => {
       if (fail) return {ok:false};

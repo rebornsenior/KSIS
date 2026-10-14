@@ -48,5 +48,14 @@ window.KSISContentGuard = (() => {
     }
     return entry.get('data');
   }
-  return {check};
+  async function checkWithNotice(args) {
+    try {
+      return await check(args);
+    } catch (error) {
+      // Decap wraps event errors in an object, hiding Error.message in its toast.
+      window.alert(error?.message || '중복 글 확인에 실패했습니다. 저장되지 않았습니다.');
+      throw error;
+    }
+  }
+  return {check: checkWithNotice};
 })();
