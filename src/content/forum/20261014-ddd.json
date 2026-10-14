@@ -9,12 +9,7 @@
   "contentBlocks": [
     {
       "type": "text",
-      "text": "안녕하세요\n안녕하세요\n안녕하세요\n안녕하세요\n안녕하세요",
-      "align": "center"
-    },
-    {
-      "type": "image",
-      "src": "/media/upload_test_hi.webp"
+      "text": "안녕하세요\n이렇게 \n작성하시면\n됩니담"
     }
   ]
 }
