@@ -1,6 +1,6 @@
 /* Best-effort duplicate check; this is not an atomic multi-user edit lock. */
 window.KSISContentGuard = (() => {
-  const groups = new Set(['forum', 'education', 'foodculture', 'bookclub', 'local']);
+  const groups = new Set(['forum', 'education', 'foodculture', 'bookclub', 'local', 'calendar', 'calendar']);
   const normalize = value => String(value || '').normalize('NFC').trim().replace(/\s+/g, ' ');
   const day = value => String(value || '').replace(/[.-]/g, '').slice(0, 8);
   async function request(path) {
@@ -41,7 +41,7 @@ window.KSISContentGuard = (() => {
         const blob = await request('git/blobs/' + file.sha);
         const bytes = Uint8Array.from(atob(blob.content.replace(/\s/g, '')), c => c.charCodeAt(0));
         const existing = JSON.parse(new TextDecoder().decode(bytes));
-        if (normalize(existing.name) === normalize(data.name) && day(existing.date) === day(data.date)) {
+        if (normalize(existing.name || existing.title) === normalize(data.name || data.title) && day(existing.date) === day(data.date)) {
           throw new Error('같은 날짜와 제목의 글이 이미 있습니다(게시글 또는 초안). 날짜 또는 제목을 변경해 주세요.');
         }
       }

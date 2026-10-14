@@ -70,7 +70,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
     ...(localMode ? {local_backend:{url:'http://127.0.0.1:8081/api/v1'}} : {publish_mode:'editorial_workflow'}),
     media_folder: 'public/media', public_folder: '/media',
-    collections: menus.map(([name, label]) => ({
+    collections: [...menus.map(([name, label]) => ({
       name, label, folder: `src/content/${name}`, create: true, format: 'json',
       identifier_field: 'name', slug: '{{year}}{{month}}{{day}}-{{slug}}',
       description: localMode ? '로컬 파일 저장 모드입니다. 이 컴퓨터의 글·사진 파일에만 저장하며 GitHub 전송과 공개 배포는 하지 않습니다.' : '초안 저장과 공개 게시를 구분합니다. 공개 게시 후 배포 완료까지 기다려 주세요.',
@@ -86,7 +86,23 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {...blocks, types: blocks.types.map(t => t.name === 'gallery' && (name === 'forum' || name === 'education')
           ? {...t, fields: [{label:'표시 방식', name:'layout', widget:'hidden', default:'slider'}, ...t.fields.slice(1)]} : t)},
       ],
-    })),
+    })), {
+      name:'calendar', label:'협회 일정', folder:'src/content/calendar',
+      create:true, format:'json', identifier_field:'title',
+      slug:'{{year}}{{month}}{{day}}-{{slug}}', editor:{preview:false},
+      description:'일정을 게시하면 홈 화면과 캘린더에 함께 반영됩니다. 참가 대상은 안내 문구이며 신청자 명단이 아닙니다.',
+      fields:[
+        {label:'기존 일정 식별자',name:'id',widget:'hidden',required:false},
+        {label:'일정 제목',name:'title',widget:'string'},
+        {label:'일정 날짜',name:'date',widget:'datetime',format:'YYYY-MM-DD',date_format:'YYYY-MM-DD',time_format:false},
+        {label:'시간 안내',name:'time',widget:'string',hint:'예: 09:00 - 11:00, 14:00 - 16:00'},
+        {label:'장소',name:'location',widget:'string'},
+        {label:'일정 설명',name:'description',widget:'text'},
+        {label:'분류',name:'category',widget:'select',options:[{label:'정기 포럼',value:'forum'},{label:'교육 특강',value:'education'},{label:'수익 실무',value:'monetize'},{label:'친목 소모임',value:'other'}]},
+        {label:'참가 대상 안내',name:'rsvps',widget:'list',required:false,field:{label:'참가 대상',name:'audience',widget:'string'},hint:'회원·일반 참가자 등의 안내만 입력하세요. 이름·전화번호 등 신청자 정보는 입력하지 마세요.'},
+        {label:'관련 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
+      ],
+    }],
   }});
   const SliderPreview = window.createClass({
     getInitialState() { return {index:0}; },
