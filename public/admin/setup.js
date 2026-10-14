@@ -24,6 +24,10 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
   });
   CMS.registerWidget('alignment', AlignmentControl);
+  if (!localMode) {
+    CMS.registerEventListener({name:'preSave',handler:window.KSISContentGuard.check});
+    CMS.registerEventListener({name:'prePublish',handler:window.KSISContentGuard.check});
+  }
   const alignField = {label:'글 정렬',name:'align',widget:'alignment',required:false,allowJustify:true};
   const blocks = {
     label: '본문 — 위에서 아래 순서대로 표시됩니다', name: 'contentBlocks', widget: 'list',
