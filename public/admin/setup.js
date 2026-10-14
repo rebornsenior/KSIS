@@ -39,6 +39,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       { label: '사진 한 장', name: 'image', widget: 'object', fields: [
         {label: '사진 첨부', name: 'src', widget: 'image'},
         {label: '사진 설명', name: 'alt', widget: 'string', required: false},
+        {...alignField,label:'사진 위치',allowJustify:false},
       ] },
       { label: '사진 여러 장 · 슬라이더', name: 'gallery', widget: 'object', fields: [
         {label: '표시 방식', name: 'layout', widget: 'select', default: 'slider', options: [

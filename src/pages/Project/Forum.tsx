@@ -1,3 +1,4 @@
+import AuthorBadge from '../../components/AuthorBadge';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
@@ -5,7 +6,7 @@ import { Users, FileText, Calendar, MapPin, X, Landmark, GraduationCap } from 'l
 import { forumsData } from './forum/index';
 import { GallerySlider } from './Project';
 import ContentLink from '../../components/ContentLink';
-import { textAlignment } from '../../content/alignment';
+import { textAlignment, headingAlignment, quoteAlignment, imageAlignment } from '../../content/alignment';
 
 interface ForumCardProps {
   forum: any;
@@ -164,15 +165,7 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
               {selectedForum.name}
             </h1>
             
-            <div className="flex items-center gap-3 bg-slate-100/50 p-4 rounded-none border border-slate-200/40 w-fit">
-              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 shrink-0 font-extrabold text-xs">
-                {selectedForum.specialty ? selectedForum.specialty[0] : '포'}
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 block tracking-wider uppercase">작성자</span>
-                <p className="text-sm font-extrabold text-[#002147]">{selectedForum.specialty}</p>
-              </div>
-            </div>
+            <AuthorBadge name={selectedForum.specialty} />
           </div>
 
           <hr className="border-slate-200/60" />
@@ -186,8 +179,8 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
                     return (
                       <h2 
                         key={idx} 
-                        className="text-base md:text-xl font-extrabold text-[#002147] border-l-4 pl-3.5 md:pl-4 py-0.5 mt-8 first:mt-0"
-                        style={{ borderColor: COLORS.gold, ...textAlignment(block.align) }}
+                        className="text-lg md:text-2xl font-extrabold text-[#002147] border-l-4 pl-3.5 md:pl-4 py-0.5 mt-8 first:mt-0"
+                        style={{ borderColor: COLORS.gold, ...headingAlignment(block.align) }}
                       >
                         {block.text}
                       </h2>
@@ -197,7 +190,7 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
                     return (
                       <p 
                         key={idx} style={textAlignment(block.align)}
-                        className="text-slate-600 text-[17px] md:text-[18.5px] leading-relaxed md:leading-loose font-medium break-keep whitespace-pre-line"
+                        className="text-slate-600 text-sm md:text-base leading-relaxed md:leading-loose font-medium break-keep whitespace-pre-line"
                       >
                         {block.text}
                       </p>
@@ -209,8 +202,8 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
                   if (block.type === 'quote') {
                     return (
                       <div 
-                        key={idx} style={textAlignment(block.align)}
-                        className="my-6 p-5 md:p-7 rounded-none border-l-[5px] border-[#002147] text-slate-800 italic font-semibold text-xs md:text-sm leading-relaxed md:leading-loose bg-slate-100/50 border border-slate-200/30 whitespace-pre-line"
+                        key={idx} style={quoteAlignment(block.align)}
+                        className="my-6 p-5 md:p-7 rounded-none border-2 border-amber-600 text-[#002147] font-bold text-sm md:text-base leading-relaxed md:leading-loose whitespace-pre-line"
                       >
                         {block.text}
                       </div>
@@ -221,7 +214,7 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
                   }
                   if (block.type === 'image') {
                     return (
-                      <div key={idx} className="my-6 overflow-hidden rounded-none border border-slate-200/40 shadow-sm max-w-4xl">
+                      <div key={idx} style={imageAlignment(block.align)} className="my-6 overflow-hidden rounded-none border border-slate-200/40 shadow-sm max-w-4xl">
                         <img src={block.src} alt={block.alt || '강연 이미지'} className="w-full h-auto object-cover" />
                       </div>
                     );

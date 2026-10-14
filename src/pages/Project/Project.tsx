@@ -1,8 +1,9 @@
+import AuthorBadge from '../../components/AuthorBadge';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
 import ContentLink from '../../components/ContentLink';
-import { textAlignment } from '../../content/alignment';
+import { textAlignment, headingAlignment, quoteAlignment, imageAlignment } from '../../content/alignment';
 import { Soup, BookOpen, Compass, FileText, Users, User, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export function GallerySlider({ images }: { images: Array<{ url: string; caption?: string }>; key?: number }) {
@@ -420,15 +421,7 @@ export default function ProjectComponent({
 
           <hr className="border-slate-100" />
           
-          <div className="flex items-center gap-4 bg-slate-50/70 p-4.5 rounded-2xl border border-slate-100/80 max-w-md">
-            <div className="w-11 h-11 rounded-full bg-[#002147]/5 flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5 text-[#002147]" />
-            </div>
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 block tracking-wider uppercase">글쓴이 및 기획자</span>
-              <p className="text-sm font-extrabold text-[#002147]">{selectedExpert.specialty}</p>
-            </div>
-          </div>
+          <AuthorBadge name={selectedExpert.specialty} />
 
           <div className="space-y-6 md:space-y-8 pt-4">
             {selectedExpert.contentBlocks ? (
@@ -439,7 +432,7 @@ export default function ProjectComponent({
                       <h4 
                         key={idx} 
                         className="text-lg md:text-2xl font-extrabold text-[#002147] border-l-4 pl-3.5 md:pl-4 py-0.5 mt-8 first:mt-0"
-                        style={{ borderColor: COLORS.gold, ...textAlignment(block.align) }}
+                        style={{ borderColor: COLORS.gold, ...headingAlignment(block.align) }}
                       >
                         {block.text}
                       </h4>
@@ -461,10 +454,17 @@ export default function ProjectComponent({
                   if (block.type === 'quote') {
                     return (
                       <div 
-                        key={idx} style={textAlignment(block.align)}
-                        className="my-6 py-4 px-6 bg-slate-50 text-[#002147] font-bold text-sm md:text-base leading-relaxed md:leading-loose whitespace-pre-line rounded-2xl border-l-4 border-amber-500 select-none"
+                        key={idx} style={quoteAlignment(block.align)}
+                        className="my-6 p-5 md:p-7 rounded-none border-2 border-amber-600 text-[#002147] font-bold text-sm md:text-base leading-relaxed md:leading-loose whitespace-pre-line"
                       >
                         {block.text}
+                      </div>
+                    );
+                  }
+                  if (block.type === 'image') {
+                    return (
+                      <div key={idx} style={imageAlignment(block.align)} className="my-6 overflow-hidden rounded-none border border-slate-200/40 shadow-sm max-w-4xl">
+                        <img src={block.src} alt={block.alt || '사진'} className="w-full h-auto object-cover" />
                       </div>
                     );
                   }
