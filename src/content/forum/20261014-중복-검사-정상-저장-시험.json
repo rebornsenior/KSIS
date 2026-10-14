@@ -1,0 +1,15 @@
+{
+  "category": "forum",
+  "categoryName": "비즈니스 포럼",
+  "name": "중복 검사 정상 저장 시험",
+  "date": "2026.06.14",
+  "specialty": "원동업 성수동편집장",
+  "desc": "원동업 성수동편집장",
+  "image": "/media/upload_test_hi.webp",
+  "contentBlocks": [
+    {
+      "type": "text",
+      "text": "원동업 성수동편집장"
+    }
+  ]
+}
