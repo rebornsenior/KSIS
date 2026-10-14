@@ -1,0 +1,37 @@
+{
+  "category": "forum",
+  "categoryName": "비즈니스 포럼",
+  "name": "협회진 테스트입니다",
+  "date": "2026.10.14",
+  "specialty": "협회진",
+  "desc": "HI",
+  "image": "/media/upload_test_hi.webp",
+  "contentBlocks": [
+    {
+      "type": "text",
+      "text": "작성중"
+    },
+    {
+      "type": "heading",
+      "text": "강조 소제목",
+      "align": "left"
+    },
+    {
+      "type": "link",
+      "text": "한국시니어교류협회 KSIS",
+      "url": "https://www.rebornsenior.com/",
+      "align": "center"
+    },
+    {
+      "type": "quote",
+      "text": "강조 박스",
+      "align": "center"
+    },
+    {
+      "type": "link",
+      "text": "노래",
+      "url": "https://youtu.be/_JwE75WMFEE?si=TKKxLAFIUhsE8ehY",
+      "align": "center"
+    }
+  ]
+}
