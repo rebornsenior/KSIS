@@ -1,3 +1,4 @@
+import {boardPosts} from '../content/board';
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
@@ -60,33 +61,8 @@ import forum_1_5 from '../images/project/forum/1_1/5.jpg';
 
 import forum_2_1 from '../images/project/forum/1_2/2.webp';
 
-interface PostItem {
-  id: string;
-  category: string;
-  title: string;
-  date: string;
-  url: string;
-}
-
-const NOTICES_DATA: PostItem[] = [
-  {
-    id: 'n1',
-    category: '행사 안내',
-    title: '제34회 비즈니스교류회 - "돈 되는 스토리는 따로 있다" 참가 신청 안내',
-    date: '2026.06.24',
-    url: 'https://cafe.naver.com/ksis1/641'
-  }
-];
-
-const INSIGHTS_DATA: PostItem[] = [
-  {
-    id: 'i1',
-    category: '여행',
-    title: '요코하마 미나토미라이에서 배운 연결의 힘 — 개항제 현장에서 본 협회의 미래',
-    date: '2026.06.01',
-    url: 'https://cafe.naver.com/ksis1/637'
-  }
-];
+const NOTICES_DATA=boardPosts('notices');
+const INSIGHTS_DATA=boardPosts('insights');
 
 const GALLERY_ITEMS = [
   {
@@ -146,12 +122,13 @@ export default function Community() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<typeof GALLERY_ITEMS[0] | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState<number>(0);
+  const [sortOrder,setSortOrder]=useState<'newest'|'oldest'>('newest');
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Reset to page 1 whenever activeTab changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab]);
+  }, [activeTab,sortOrder]);
 
   useEffect(() => {
     if (searchParams.get('goto') === 'gallery') {
@@ -205,7 +182,7 @@ export default function Community() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasSelectedGalleryItem, galleryItemId]);
 
-  const activePosts = activeTab === 'insight' ? INSIGHTS_DATA : NOTICES_DATA;
+  const activePosts = [...(activeTab === 'insight' ? INSIGHTS_DATA : NOTICES_DATA)].sort((a,b)=> (sortOrder==='newest'?-1:1)*a.date.localeCompare(b.date) || a.slug.localeCompare(b.slug));
 
   const POSTS_PER_PAGE = 5;
   const totalPages = Math.ceil(activePosts.length / POSTS_PER_PAGE);
@@ -224,7 +201,7 @@ export default function Community() {
             </h1>
             <p className="text-sm md:text-lg text-slate-500 max-w-3xl leading-relaxed break-keep mx-auto md:mx-0">
               협회의 주요 공지사항과 시니어 비즈니스, AI, 브랜드 마케팅 전문 칼럼을 확인해보세요.<br />
-              제목을 누르면 자세한 연재글이 수록된 공식 네이버 카페로 바로 이동합니다.
+              제목을 누르면 홈페이지 게시글 또는 관련 외부 페이지로 이동합니다.
             </p>
           </div>
         </div>
@@ -285,18 +262,11 @@ export default function Community() {
                   <h2 className="text-xl font-bold text-[#002147] flex items-center gap-2">
                     {activeTab === 'insight' ? '전문 인사이트 칼럼' : '협회 공식 알림판'}
                   </h2>
-                  <p className="text-xs text-slate-400 mt-1">총 {activePosts.length}개의 전문 글이 수록되어 있습니다.</p>
+                  <p className="text-xs text-slate-400 mt-1">총 {activePosts.length}개의 글이 수록되어 있습니다.</p>
                 </div>
-                <a 
-                  href="https://cafe.naver.com/ksis1" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-100 px-3 py-1.5 rounded-lg w-fit transition-colors cursor-pointer"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  클릭하면 네이버 카페로 바로 연결됩니다
-                </a>
-              </div>
+                <select aria-label="글 정렬 순서" value={sortOrder} onChange={e=>setSortOrder(e.target.value as 'newest'|'oldest')} className="text-xs text-slate-600 border border-slate-200 rounded-lg px-3 py-2">
+                  <option value="newest">최신순</option><option value="oldest">오래된순</option>
+                </select>              </div>
 
               <div className="divide-y divide-slate-100">
                 <AnimatePresence mode="wait">
@@ -312,18 +282,16 @@ export default function Community() {
                       <a
                         key={post.id}
                         href={post.url}
-                        target="_blank"
+                        target={post.internal ? undefined : '_blank'}
                         rel="noopener noreferrer"
                         className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 -mx-3 md:-mx-5 rounded-2xl hover:bg-slate-50/80 transition-all text-left"
                       >
                         <div className="space-y-2.5 flex-1 min-w-0">
                           <div className="flex flex-wrap gap-2 items-center">
-                            <span className="text-[11px] font-extrabold tracking-wider px-2.5 py-1 rounded-md text-amber-700 bg-amber-50 uppercase border border-amber-100/50">
-                              {post.category}
-                            </span>
-                            <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 bg-[#1EC800]/10 text-[#1EC800] rounded-md border border-[#1EC800]/15">
-                              <span className="font-black italic">N</span> 네이버 카페
-                            </span>
+                            {(activeTab==='insight' ? post.tags : post.internal ? [post.label] : []).map((tag:string)=>(
+                              <span key={tag} className="text-[11px] font-extrabold tracking-wider px-2.5 py-1 rounded-md text-amber-700 bg-amber-50 uppercase border border-amber-100/50">{tag}</span>
+                            ))}
+                            {(activeTab==='insight' || !post.internal) && <span className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 bg-[#1EC800]/10 text-[#1EC800] rounded-md border border-[#1EC800]/15">{activeTab==='insight' ? post.sourceLabel : '네이버 카페'}</span>}
                           </div>
                           <h3 className="text-base md:text-lg font-bold text-slate-800 leading-snug group-hover:text-[#002147] group-hover:underline decoration-slate-300 transition-colors break-keep pr-4">
                             {post.title}
@@ -349,7 +317,7 @@ export default function Community() {
               </div>
 
               {/* Pagination controls */}
-              {totalPages > 1 && (
+              {totalPages > 0 && (
                 <div className="flex items-center justify-center gap-1.5 pt-8 mt-6 border-t border-slate-100">
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}

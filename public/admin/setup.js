@@ -24,6 +24,20 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
   });
   CMS.registerWidget('alignment', AlignmentControl);
+  const boardValidation=({entry})=>{
+    const group=entry.get('collection'), data=entry.get('data').toJS();
+    let message='';
+    if(['notices','insights'].includes(group)){
+      if(data.sourceInfo?.length!==1) message='제목 위 표시를 하나 선택해 주세요.';
+      else if(data.sourceInfo[0].type==='other' && !data.sourceInfo[0].label?.trim()) message='기타를 선택하면 표시할 이름을 반드시 입력해야 합니다.';
+    }
+    if(group==='insights' && (data.tags?.length || 0)>5) message='해시태그는 최대 5개입니다.';
+    if(group==='insights' && (data.tags || []).some(tag=>Array.from(tag).length>15)) message='해시태그는 하나당 15자 이내로 입력해 주세요.';
+    if(message){window.alert(message);throw new Error(message);}
+    return entry.get('data');
+  };
+  CMS.registerEventListener({name:'preSave',handler:boardValidation});
+  CMS.registerEventListener({name:'prePublish',handler:boardValidation});
   if (!localMode) {
     CMS.registerEventListener({name:'preSave',handler:window.KSISContentGuard.check});
     CMS.registerEventListener({name:'prePublish',handler:window.KSISContentGuard.check});
@@ -102,7 +116,31 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'참가 대상 안내',name:'rsvps',widget:'list',required:false,field:{label:'참가 대상',name:'audience',widget:'string'},hint:'회원·일반 참가자 등의 안내만 입력하세요. 이름·전화번호 등 신청자 정보는 입력하지 마세요.'},
         {label:'관련 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
       ],
-    }],
+    },
+    ...['notices','insights'].map(name=>({
+      name,label:name==='notices'?'BOARD · 공지사항':'BOARD · 인사이트',folder:'src/content/'+name,
+      create:true,format:'json',identifier_field:'title',slug:'{{year}}{{month}}{{day}}-{{slug}}',
+      ...(name==='insights'?{editor:{preview:false}}:{}),
+      fields:[
+        {label:'제목',name:'title',widget:'string'},
+        {label:'날짜',name:'date',widget:'datetime',format:'YYYY.MM.DD',time_format:false},
+        {label:'제목 위 표시 — 하나만 선택',name:'sourceInfo',widget:'list',min:1,max:1,types:[
+          {label:'네이버 카페',name:'naver',widget:'object',fields:[{name:'label',widget:'hidden',default:'네이버 카페'}]},
+          ...(name==='notices' ? menus.map(([group,label])=>({label,name:group,widget:'object',fields:[{name:'label',widget:'hidden',default:label}]})) : [{label:'뉴스',name:'news',widget:'object',fields:[{name:'label',widget:'hidden',default:'뉴스'}]}]),
+          {label:'기타(직접 입력)',name:'other',widget:'object',fields:[{label:'표시할 이름 (필수)',name:'label',widget:'string',required:true,pattern:['.*\\S.*','표시할 이름을 입력해 주세요.']}]},
+        ]},
+        ...(name==='notices' ? [
+          {label:'작성자',name:'specialty',widget:'string'},
+          {label:'소개',name:'desc',widget:'text',required:false},
+          {label:'대표 사진',name:'image',widget:'image',required:false},
+          blocks,
+        ] : [
+          {label:'외부 링크',name:'url',widget:'string',pattern:['^https?://[^\\s]+$','http:// 또는 https:// 주소를 입력해 주세요.']},
+          {label:'해시태그 — 최대 5개, 각각 15자',name:'tags',widget:'list',max:5,required:false,field:{label:'태그 (15자 이내)',name:'tag',widget:'string'}},
+        ]),
+      ],
+    })),
+    ],
   }});
   const SliderPreview = window.createClass({
     getInitialState() { return {index:0}; },
@@ -134,6 +172,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       const props = this.props;
       const post = props.entry.get('data').toJS();
       const asset = value => value ? String(props.getAsset(value)) : '';
+      post.name = post.name || post.title;
       post.image = asset(post.image);
       post.contentBlocks = (post.contentBlocks || []).map(block => ({...block,
         ...(block.src ? {src:asset(block.src)} : {}),
@@ -150,6 +189,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
   });
   for (const [name] of menus) CMS.registerPreviewTemplate(name, WebsitePreview);
+  CMS.registerPreviewTemplate('notices', WebsitePreview);
   function preview({entry, getAsset}) {
     const h = window.h;
     const data = entry.get('data').toJS();

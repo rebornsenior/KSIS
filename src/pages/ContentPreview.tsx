@@ -21,7 +21,7 @@ export default function ContentPreview() {
     return () => window.removeEventListener('message', receive);
   }, []);
   if (!preview) return <p>관리자 입력 내용을 기다리고 있습니다. 실제 게시가 아닌 미리보기입니다.</p>;
-  if (preview.group === 'forum') return <Forum previewPost={preview.post} />;
+  if (preview.group === 'forum' || preview.group === 'notices') return <Forum previewPost={preview.post} />;
   if (preview.group === 'education') return <Education previewPost={preview.post} />;
   return <Project previewPost={preview.post} selectedCategory={preview.post.category || 'food'} />;
 }

@@ -1,3 +1,4 @@
+import PostDetail from './pages/PostDetail';
 import { useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
@@ -32,6 +33,7 @@ export default function App() {
           <Route path={ROUTES.ARCHIVE} element={<Archive />} />
           <Route path={ROUTES.CALENDAR} element={<CalendarPage />} />
           <Route path={ROUTES.COMMUNITY} element={<Community />} />
+          <Route path="/post/:group/:slug" element={<PostDetail />} />
           <Route path="/content-preview" element={<ContentPreview />} />
         </Route>
       </Routes>
