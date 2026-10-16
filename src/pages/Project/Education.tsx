@@ -69,7 +69,7 @@ function EducationCard({ clas, categories, setSelectedClass }: EducationCardProp
                 {clas.duration}
               </span>
             </div>
-            <span className="text-base text-slate-400 font-bold font-mono">
+            <span className="text-base text-slate-400">
               {clas.date || '2026.06.14'}
             </span>
           </div>
