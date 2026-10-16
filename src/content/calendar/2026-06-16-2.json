@@ -1,14 +1,17 @@
 {
+  "registrationEnabled": true,
   "time": "17:00 -",
   "date": "2026-06-16",
   "location": "메가박스 동대문 8관 (중구 장충단로 247굿모닝시티 9층, 동대문역사문화공원역(DDP) 14번 출구)",
+  "registrationYear": "2026",
   "title": "바람이 전하는 노래- 우리세대의 기억과 위로",
   "rsvps": [
     "한국시니어교류협회 회원, 추천동반인"
   ],
   "link": "https://cafe.naver.com/ksis1/635",
   "id": "2",
-  "registrationEventId": "evt-d829e7c9-231a-47e0-9244-7b5a256f1231",
+  "registrationEventId": "evt-976cd8e1-1c7e-46f6-b9e8-e04a115fe169",
   "description": "6월 문화가 있는 날",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLScUgfDkV75Yieb4cE8Hjo2tOYG1R7NlT3tSeWVPU0m67aZlhg/viewform?usp=pp_url&entry.1595475634=2026.06.16+%7C+%EB%B0%94%EB%9E%8C%EC%9D%B4+%EC%A0%84%ED%95%98%EB%8A%94+%EB%85%B8%EB%9E%98-+%EC%9A%B0%EB%A6%AC%EC%84%B8%EB%8C%80%EC%9D%98+%EA%B8%B0%EC%96%B5%EA%B3%BC+%EC%9C%84%EB%A1%9C",
   "category": "other"
 }
