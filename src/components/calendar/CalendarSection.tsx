@@ -1,3 +1,4 @@
+import { registrationLink } from '../../registration-link';
 import { useState, useEffect, FormEvent } from 'react';
 import { CalendarEvent } from '../../types';
 import { INITIAL_EVENTS } from '../../initialData';
@@ -478,9 +479,9 @@ export default function CalendarSection({ forceGridView = false }: CalendarSecti
                 <div className="flex items-center gap-2 pt-1">
                   <Compass size={13} className="text-emerald-400 flex-none" />
                   <span className="font-extrabold text-white shrink-0">신청 링크 :</span>
-                  {selectedEvent.link ? (
+                  {registrationLink(selectedEvent) ? (
                     <a
-                      href={selectedEvent.link}
+                      href={registrationLink(selectedEvent)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-emerald-300 hover:text-emerald-400 underline font-bold"
@@ -595,9 +596,9 @@ export default function CalendarSection({ forceGridView = false }: CalendarSecti
                         <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                           <Compass size={12} className="text-[#0d34a6]" />
                           <span>신청 링크: </span>
-                          {ev.link ? (
+                          {registrationLink(ev) ? (
                             <a
-                              href={ev.link}
+                              href={registrationLink(ev)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[#0d34a6] hover:underline font-extrabold"
@@ -779,9 +780,9 @@ export default function CalendarSection({ forceGridView = false }: CalendarSecti
                   <div className="flex items-center gap-1.5 text-slate-800 font-bold">
                     <Compass size={12} className="text-[#0d34a6]" />
                     <span>신청 링크: </span>
-                    {selectedEvent.link ? (
+                    {registrationLink(selectedEvent) ? (
                       <a
-                        href={selectedEvent.link}
+                        href={registrationLink(selectedEvent)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[#0d34a6] hover:underline font-extrabold"

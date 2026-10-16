@@ -1,0 +1,45 @@
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+const source=readFileSync(new URL('../google-apps-script/registration/Code.gs',import.meta.url),'utf8');
+function fixture({email='owner@example.com',failChoices=false}={}) {
+  const seed={formId:'2026',eventItemId:'1',nameItemId:'2',phoneItemId:'3',payerItemId:'4',eventValue:'2026-forum-37 | 원래 행사명',readers:['owner@example.com'],deleters:['owner@example.com']};
+  const properties=new Map([['KSIS_REGISTRATION',JSON.stringify({events:{'2026-forum-37':seed}})]]);
+  const forms=new Map(); let created=0,sequence=0;
+  function form(id) {
+    const items=[];
+    function add(type) {
+      const item={id:String(++sequence),type,title:'',choices:[],setTitle(value){this.title=value;return this;},setRequired(){return this;},getId(){return this.id;},getTitle(){return this.title;},getType(){return this.type;},asListItem(){return this;},getChoices(){return this.choices.map(value=>({getValue:()=>value}));},setChoiceValues(values){if(failChoices){failChoices=false;throw Error('RETRY');}this.choices=values;return this;},createResponse:value=>({value})};
+      items.push(item); return item;
+    }
+    const f={getId:()=>id,getItems:()=>items,addListItem:()=>add('LIST'),addTextItem:()=>add('TEXT'),getItemById:id=>items.find(item=>item.id===String(id)),createResponse:()=>({withItemResponse:response=>({toPrefilledUrl:()=>`https://docs.google.com/forms/d/e/${id}/viewform?entry.1=${encodeURIComponent(response.value)}`})}),responses:[],getResponses:()=>f.responses,setDescription(){},setCollectEmail(){},setLimitOneResponsePerUser(){},setPublishingSummary(){},setPublished(){},setAcceptingResponses(){}};
+    forms.set(id,f);return f;
+  }
+  const base=form('2026');
+  base.addListItem().setTitle('참가할 행사').setChoiceValues([seed.eventValue]);
+  for(const title of ['신청자 이름','전화번호','입금자명'])base.addTextItem().setTitle(title);
+  const ctx=vm.createContext({Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,value)=>Array.from(createHash('sha256').update(value).digest())},Session:{getActiveUser:()=>({getEmail:()=>email})},PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties.get(key)||null,setProperty:(key,value)=>properties.set(key,value)})},FormApp:{openById:id=>forms.get(id),create:()=>form('new-'+ ++created)},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})}});
+  vm.runInContext(source,ctx);
+  return {run:request=>ctx.ksisRegistration(request),initialize:()=>ctx.setupRegistrationAutomation(),created:()=>created,base,forms,properties,setFail:()=>{failChoices=true;}};
+}
+const sync={action:'sync',eventId:'evt-new',title:'다음 행사',date:'2026-12-30'};
+test('initialization retains existing permissions and 2026 form',()=>{const f=fixture();f.initialize();f.run(sync);assert.equal(f.created(),0);assert.equal(f.base.getItems()[0].getChoices().length,2);});
+test('2027 event uses 2027 even when registered earlier; retries reuse the form and choice',()=>{const f=fixture();f.initialize();const request={...sync,date:'2027-01-02'};const a=f.run(request);const b=f.run(request);assert.equal(a.year,'2027');assert.equal(a.registrationForm,b.registrationForm);assert.equal(f.created(),1);});
+test('unauthorized caller cannot create forms or bootstrap access',()=>{const f=fixture({email:'other@example.com'});assert.throws(()=>f.initialize(),/FORBIDDEN/);assert.throws(()=>f.run(sync),/AUTOMATION_NOT_CONFIGURED/);assert.equal(f.created(),0);});
+test('title edit updates visible label and preserves the prior answer as an alias',()=>{const f=fixture();f.initialize();f.run(sync);const before=JSON.parse(f.properties.get('KSIS_EVENT_evt-new'));f.run({...sync,title:'수정한 제목'});const after=JSON.parse(f.properties.get('KSIS_EVENT_evt-new'));assert.equal(after.eventValue,'2026.12.30 | 수정한 제목');assert.ok(after.previousValues.includes(before.eventValue));assert.equal(f.base.getItems()[0].getChoices().length,2);});
+test('moving a linked event between years stops without creating another form',()=>{const f=fixture();f.initialize();f.run(sync);assert.throws(()=>f.run({...sync,date:'2027-01-02'}),/EVENT_YEAR_CHANGED/);assert.equal(f.created(),0);});
+test('failed option update can retry without duplicate annual forms',()=>{const f=fixture();f.initialize();f.setFail();assert.throws(()=>f.run({...sync,date:'2027-01-02'}),/RETRY/);f.run({...sync,date:'2027-01-02'});assert.equal(f.created(),1);});
+test('invalid date never creates a form',()=>{const f=fixture();f.initialize();assert.throws(()=>f.run({...sync,date:'2027-02-30'}),/INVALID_EVENT_DATE/);assert.equal(f.created(),0);});
+
+test('closing an event keeps its mapping and removes only its own dropdown choice',()=>{const f=fixture();f.initialize();f.run(sync);f.run({...sync,enabled:false});assert.equal(f.base.getItems()[0].getChoices().length,1);assert.equal(JSON.parse(f.properties.get('KSIS_EVENT_evt-new')).enabled,false);f.run(sync);assert.equal(f.base.getItems()[0].getChoices().length,2);});
+test('missing automation initialization stops before creating any Google form',()=>{const f=fixture();assert.throws(()=>f.run(sync),/AUTOMATION_NOT_CONFIGURED/);assert.equal(f.created(),0);});
+
+function responseFor(form,value,id='test-response') {
+  return {getId:()=>id,getTimestamp:()=>new Date('2026-10-16T00:00:00Z'),getItemResponses:()=>form.getItems().map((item,index)=>({getItem:()=>item,getResponse:()=>index===0?value:index===1?'가상 신청자':'테스트'}))};
+}
+test('new dropdown label contains only date and title, never the internal event ID',()=>{const f=fixture();f.initialize();f.run(sync);const event=JSON.parse(f.properties.get('KSIS_EVENT_evt-new'));assert.equal(event.eventValue,'2026.12.30 | 다음 행사');assert.ok(!event.eventValue.includes(sync.eventId));});
+test('legacy label migration retains existing responses and removes the ID from the dropdown',()=>{const f=fixture();f.initialize();const oldValue=f.base.getItems()[0].getChoices()[0].getValue();f.base.responses.push(responseFor(f.base,oldValue));f.run({...sync,eventId:'2026-forum-37',title:'제37회 비즈니스교류회',date:'2026-11-07'});assert.equal(f.run({action:'list',eventId:'2026-forum-37'}).records.length,1);assert.equal(f.base.getItems()[0].getChoices()[0].getValue(),'2026.11.07 | 제37회 비즈니스교류회');});
+test('responses submitted under both old and new labels stay in the same event roster',()=>{const f=fixture();f.initialize();f.run(sync);const oldValue=JSON.parse(f.properties.get('KSIS_EVENT_evt-new')).eventValue;f.base.responses.push(responseFor(f.base,oldValue,'old'));f.run({...sync,title:'바뀐 행사명'});const newValue=JSON.parse(f.properties.get('KSIS_EVENT_evt-new')).eventValue;f.base.responses.push(responseFor(f.base,newValue,'new'));assert.equal(f.run({action:'list',eventId:sync.eventId}).records.length,2);});
+test('two events cannot claim identical date/title labels, including historical labels',()=>{const f=fixture();f.initialize();f.run(sync);assert.throws(()=>f.run({...sync,eventId:'evt-other'}),/EVENT_LABEL_CONFLICT/);f.run({...sync,title:'수정된 제목'});assert.throws(()=>f.run({...sync,eventId:'evt-other'}),/EVENT_LABEL_CONFLICT/);});

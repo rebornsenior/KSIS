@@ -8,4 +8,6 @@ export interface CalendarEvent {
   location: string;
   rsvps: string[];
   link?: string;
+  registrationEnabled?: boolean;
+  registrationForm?: string;
 }
