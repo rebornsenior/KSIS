@@ -111,6 +111,21 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   };
   CMS.registerEventListener({name:'preSave',handler:boardValidation});
   CMS.registerEventListener({name:'prePublish',handler:boardValidation});
+  const closeCalendarRegistration=async({entry})=>{
+    if(!entry || entry.get('collection')!=='calendar') return;
+    const data=entry.get('data');
+    if(!data.get('registrationEnabled') && !data.get('registrationYear')) return;
+    const eventId=data.get('registrationEventId'),title=data.get('title'),date=data.get('date');
+    try {
+      if(!eventId || !title || !date) throw new Error('MISSING_REGISTRATION_METADATA');
+      const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,enabled:false});
+      if(result?.eventId!==eventId || result.disabled!==true) throw new Error('CLOSE_NOT_CONFIRMED');
+    } catch(error) {
+      window.alert('구글 폼의 행사 접수를 닫지 못해 일정 삭제를 중단했습니다. 구글 계정을 연결한 뒤 다시 삭제해 주세요. ('+error.message+')');
+      throw error;
+    }
+  };
+  CMS.registerEventListener({name:'preUnpublish',handler:closeCalendarRegistration});
 
   const alignField = {label:'글 정렬',name:'align',widget:'alignment',required:false,allowJustify:true};
   const blocks = {

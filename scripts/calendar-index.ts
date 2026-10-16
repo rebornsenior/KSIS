@@ -11,6 +11,11 @@ export function calendarIndex(): Plugin {
   return {
     name:'ksis-admin-calendar-index',
     configureServer(server) {
+      server.middlewares.use('/admin/registration-repair.html',(_req,res)=>{
+        const file=path.resolve('.codex-runtime/registration-repair.html');
+        if(!fs.existsSync(file)){res.statusCode=404;res.end();return;}
+        res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(fs.readFileSync(file));
+      });
       server.middlewares.use('/admin/calendar-index.json',(_req,res)=>{
         try {res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');res.end(read());}
         catch {res.statusCode=500;res.end('{"error":"CALENDAR_INDEX_FAILED"}');}
