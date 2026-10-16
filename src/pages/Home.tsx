@@ -414,14 +414,6 @@ export default function Home() {
                KSIS가 운영하는 포럼, 프로젝트, 플랫폼, 교육 프로그램을 통해 교류와 수익화, 성장을 함께 만들어갑니다.
               </p>
             </div>
-            
-            <Link 
-              to={ROUTES.ARCHIVE} 
-              className="group inline-flex items-center gap-2 pb-[2px] md:pb-[4px] text-[#0d34a6] font-medium border-b border-[#0d34a6] md:border-transparent md:hover:border-[#0d34a6] transition-colors h-fit mx-auto"
-            >
-              <span>전체 프로그램 보기</span>
-              <ChevronRight className="w-4 h-4 transition-transform md:group-hover:translate-x-1" />
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

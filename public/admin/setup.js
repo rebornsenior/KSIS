@@ -126,10 +126,11 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   const boardValidation=async({entry})=>{
     const group=entry.get('collection'), data=entry.get('data').toJS();
     let message='';
-    if(['notices','insights'].includes(group)){
+    if(group==='insights'){
       if(data.sourceInfo?.length!==1) message='제목 위 표시를 하나 선택해 주세요.';
       else if(data.sourceInfo[0].type==='other' && !data.sourceInfo[0].label?.trim()) message='기타를 선택하면 표시할 이름을 반드시 입력해야 합니다.';
     }
+    if(group==='notices' && data.noticeCategory && !['participation','association','recruitment'].includes(data.noticeCategory)) message='공지 분류를 다시 선택해 주세요.';
     if(group==='insights' && (data.tags?.length || 0)>5) message='해시태그는 최대 5개입니다.';
     if(group==='insights' && (data.tags || []).some(tag=>Array.from(tag).length>15)) message='해시태그는 하나당 15자 이내로 입력해 주세요.';
     if(message){window.alert(message);throw new Error(message);}
@@ -234,6 +235,16 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'관련 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
       ],
     },
+    {
+      name:'gallery',label:'BOARD · 활동 갤러리',folder:'src/content/gallery',create:true,format:'json',identifier_field:'title',slug:'{{year}}{{month}}{{day}}-{{slug}}',
+      fields:[
+        {label:'앨범 제목',name:'title',widget:'string'},
+        {label:'활동 날짜',name:'date',widget:'datetime',format:'YYYY-MM-DD',time_format:false},
+        {label:'대표 사진',name:'image',widget:'image'},
+        {label:'앨범 사진',name:'images',widget:'list',min:1,fields:[{label:'사진',name:'url',widget:'image'},{label:'사진 설명 (선택사항)',name:'caption',widget:'string',required:false}]},
+        {label:'관련 게시글 링크 (선택사항)',name:'relatedUrl',widget:'string',required:false,pattern:['^(https?://|/#[/]post/)','홈페이지 게시글 경로 /#/post/... 또는 https:// 주소를 입력하세요.'],hint:'연결한 경우 앨범에 관련 게시글 보기 버튼이 표시됩니다.'},
+      ],
+    },
     ...['notices','insights'].map(name=>({
       name,label:name==='notices'?'BOARD · 공지사항':'BOARD · 인사이트',folder:'src/content/'+name,
       create:true,format:'json',identifier_field:'title',slug:'{{year}}{{month}}{{day}}-{{slug}}',
@@ -241,11 +252,15 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       fields:[
         {label:'제목',name:'title',widget:'string'},
         {label:'날짜',name:'date',widget:'datetime',format:'YYYY.MM.DD',time_format:false},
-        {label:'제목 위 표시 — 하나만 선택',name:'sourceInfo',widget:'list',min:1,max:1,types:[
+        ...(name==='notices' ? [
+          {label:'공지 분류 (선택사항)',name:'noticeCategory',widget:'select',required:false,options:[{label:'참가 신청',value:'participation'},{label:'협회 소식',value:'association'},{label:'모집 안내',value:'recruitment'}],hint:'해당하는 분류가 없으면 선택하지 않아도 됩니다.'},
+        ] : [
+                  {label:'제목 위 표시 — 하나만 선택',name:'sourceInfo',widget:'list',min:1,max:1,types:[
           {label:'네이버 카페',name:'naver',widget:'object',fields:[{name:'label',widget:'hidden',default:'네이버 카페'}]},
           ...(name==='notices' ? menus.map(([group,label])=>({label,name:group,widget:'object',fields:[{name:'label',widget:'hidden',default:label}]})) : [{label:'뉴스',name:'news',widget:'object',fields:[{name:'label',widget:'hidden',default:'뉴스'}]}]),
           {label:'기타(직접 입력)',name:'other',widget:'object',fields:[{label:'표시할 이름 (필수)',name:'label',widget:'string',required:true,pattern:['.*\\S.*','표시할 이름을 입력해 주세요.']}]},
-        ]},
+        ]}
+        ]),
         ...(name==='notices' ? [
           {label:'작성자',name:'specialty',widget:'string'},
           {label:'소개',name:'desc',widget:'text',required:false},

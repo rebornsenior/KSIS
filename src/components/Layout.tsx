@@ -172,7 +172,7 @@ const Footer = () => {
             <li><Link to={ROUTES.ABOUT} className="hover:opacity-100 transition-opacity">소개</Link></li>
             <li><Link to={ROUTES.ARCHIVE} className="hover:opacity-100 transition-opacity">프로그램</Link></li>
             <li><Link to={ROUTES.CALENDAR} className="hover:opacity-100 transition-opacity">일정</Link></li>
-            <li><Link to={ROUTES.COMMUNITY} className="hover:opacity-100 transition-opacity">네이버 카페</Link></li>
+            <li><a href="https://cafe.naver.com/ksis1" target="_blank" rel="noopener noreferrer" className="hover:opacity-100 transition-opacity">네이버 카페</a></li>
           </ul>
         </div>
       </div>

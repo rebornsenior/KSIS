@@ -6,6 +6,7 @@ export function boardPosts(group:string){
   const source=post.sourceInfo?.[0];
   const label=source?.type==='other'?source.label:(labels as Record<string,string>)[source?.type] || '기타';
   if(group==='insights') return {...post,tags:(post.tags || []).slice(0,5),sourceLabel:label};
-  return {...post,url:'#/post/notices/'+encodeURIComponent(post.slug),label,internal:true};
+  const noticeLabels:Record<string,string>={participation:'참가 신청',association:'협회 소식',recruitment:'모집 안내'};
+  return {...post,url:'#/post/notices/'+encodeURIComponent(post.slug),label:noticeLabels[post.noticeCategory] || '',internal:true};
  });
 }
