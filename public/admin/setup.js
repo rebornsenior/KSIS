@@ -47,9 +47,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   CMS.registerWidget('registration-form',RegistrationFormControl);
   const RegistrationRosterControl = window.createClass({
     getInitialState() { return {open:false,connection:''}; },
-    componentDidMount() {
-      if(!this.props.value) this.props.onChange('evt-'+crypto.randomUUID());
-    },
+
     componentDidUpdate(previous) {
       if(previous.value!==this.props.value && this.state.open) this.setState({open:false});
     },
@@ -69,6 +67,8 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     }
   });
   CMS.registerWidget('registration-roster',RegistrationRosterControl);
+  let pendingRegistrationId=null;
+  window.addEventListener('hashchange',()=>{pendingRegistrationId=null;});
   const syncCalendarRegistration=async(entry)=>{
     let data=entry.get('data').delete('registrationRefreshRequested');
     if(entry.get('collection')!=='calendar') return data;
@@ -77,8 +77,9 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       window.alert('신청 연결을 갱신하려면 신청 받기를 켠 뒤 다시 게시하세요.');
       throw new Error('REGISTRATION_DISABLED');
     }
-    if(!enabled && !data.get('registrationYear')) return data;
-    const eventId=data.get('registrationEventId'),title=data.get('title'),date=data.get('date');
+    if(!enabled && !data.get('registrationYear') && !data.get('registrationForm') && !data.get('registrationEventId')) return data;
+    const eventId=data.get('registrationEventId') || (enabled ? (pendingRegistrationId ||= 'evt-'+crypto.randomUUID()) : ''),title=data.get('title'),date=data.get('date');
+    data=data.set('registrationEventId',eventId);
     if(!eventId || !title?.trim() || !date) throw new Error('신청 연결을 위해 일정 제목과 날짜를 입력해 주세요.');
     try {
       const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,enabled});
@@ -114,7 +115,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   const closeCalendarRegistration=async({entry})=>{
     if(!entry || entry.get('collection')!=='calendar') return;
     const data=entry.get('data');
-    if(!data.get('registrationEnabled') && !data.get('registrationYear')) return;
+    if(!data.get('registrationEnabled') && !data.get('registrationYear') && !data.get('registrationForm') && !data.get('registrationEventId')) return;
     const eventId=data.get('registrationEventId'),title=data.get('title'),date=data.get('date');
     try {
       if(!eventId || !title || !date) throw new Error('MISSING_REGISTRATION_METADATA');
@@ -203,6 +204,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
 
         {label:'참가 신청 폼 · 화면 미리보기',name:'registrationForm',widget:'registration-form',required:false},
         {label:'신청 명단 관리 · 이 일정',name:'registrationEventId',widget:'registration-roster',required:false},
+        {label:'신청 연결 연도',name:'registrationYear',widget:'hidden',required:false},
         {label:'관련 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
       ],
     },
