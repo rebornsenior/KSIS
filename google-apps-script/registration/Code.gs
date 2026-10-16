@@ -98,7 +98,12 @@ function ksisSyncEvent_(request, email) {
       registry.inactiveValues=Array.from(new Set([...(registry.inactiveValues || []),event.eventValue,...(event.previousValues || [])]));
       const remaining=list.getChoices().map(choice=>choice.getValue()).filter(value=>!registry.inactiveValues.includes(value));
       if(remaining.length) list.setChoiceValues(remaining);
-      else existingForm.setAcceptingResponses(false);
+      else {
+        // Google dropdowns cannot have zero choices. Remove the closed event
+        // name, leave a neutral placeholder, and close submissions entirely.
+        existingForm.setAcceptingResponses(false);
+        list.setChoiceValues(['현재 신청 가능한 행사가 없습니다']);
+      }
       event.enabled=false;
       store.setProperty('KSIS_EVENT_'+request.eventId,JSON.stringify(event));
       store.setProperty('KSIS_YEAR_'+year,JSON.stringify(registry));
@@ -144,7 +149,7 @@ function ksisSyncEvent_(request, email) {
     // including if Google rejects the choice update and the caller retries.
     store.setProperty('KSIS_EVENT_'+request.eventId,JSON.stringify(event));
     registry.inactiveValues=(registry.inactiveValues || []).filter(value=>!oldValues.includes(value) && value!==label);
-    const nextChoices=choices.filter(value=>!oldValues.includes(value) && value!==label && !registry.inactiveValues.includes(value));
+    const nextChoices=choices.filter(value=>value!=='현재 신청 가능한 행사가 없습니다' && !oldValues.includes(value) && value!==label && !registry.inactiveValues.includes(value));
     nextChoices.push(label);
     list.setChoiceValues(nextChoices);
     store.setProperty('KSIS_YEAR_'+year,JSON.stringify(registry));
