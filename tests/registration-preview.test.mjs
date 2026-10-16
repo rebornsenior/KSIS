@@ -23,3 +23,14 @@ test('untrusted URLs cannot create a preview frame or an external action link',(
     assert.ok(!all.some(node=>node.tag==='iframe' || node.tag==='a'));
   }
 });
+
+test('preview isolates Google login/drafts and strips prefills without changing the actual application link',()=>{
+  const value='https://docs.google.com/forms/d/e/test/viewform?usp=pp_url&entry.123=old-answer&authuser=0#draft';
+  const all=nodes(context.control.render.call({props:{value,onChange(){}}}));
+  const frame=all.find(node=>node.tag==='iframe');
+  assert.equal(frame.props.credentialless,'');
+  const preview=new URL(frame.props.src);
+  assert.equal(preview.search,'?embedded=true');
+  assert.equal(all.find(node=>node.tag==='a').props.href,value);
+  assert.ok(!frame.props.sandbox.includes('allow-forms'));
+});

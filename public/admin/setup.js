@@ -33,6 +33,9 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       try {
         const url=new URL(value);
         if(url.protocol==='https:' && url.hostname==='docs.google.com' && /^\/forms\/d\/(?:e\/)?[a-zA-Z0-9_-]+\/viewform$/.test(url.pathname)) {
+          // Preview the blank public form, never a prefilled response draft.
+          // Keep the original URL untouched for the real application link.
+          url.search='';
           url.searchParams.set('embedded','true'); embed=url.href;
         }
       } catch {}
@@ -40,7 +43,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         h('input',{type:'url',id:this.props.forID,value,placeholder:'Google Forms 신청자용 긴 링크',onChange:e=>this.props.onChange(e.target.value),style:{width:'100%',padding:'12px',border:'1px solid #cbd5e1',borderRadius:'4px'}}),
         h('p',{},'보기 전용 신청서입니다. 여기서는 입력·제출할 수 없습니다. 일정 저장은 화면 맨 위의 게시 버튼을 사용하세요.'),
         embed && h('a',{href:value,target:'_blank',rel:'noopener noreferrer'},'실제 신청서 새 창에서 확인 · 제출 시 실제 접수'),
-        embed ? h('div',{inert:true,'aria-label':'보기 전용 신청서 미리보기'},h('iframe',{title:'참가 신청 폼 미리보기 · 입력 및 제출 불가',src:embed,tabIndex:-1,sandbox:'allow-scripts allow-same-origin',referrerPolicy:'no-referrer',style:{width:'100%',height:'750px',border:'1px solid #e2e8f0',borderRadius:'6px'}})) : h('p',{},'Google Forms의 /viewform 긴 주소를 입력하세요.')
+        embed ? h('div',{inert:true,'aria-label':'보기 전용 신청서 미리보기'},h('iframe',{title:'참가 신청 폼 미리보기 · 입력 및 제출 불가',credentialless:'',src:embed,tabIndex:-1,sandbox:'allow-scripts allow-same-origin',referrerPolicy:'no-referrer',style:{width:'100%',height:'750px',border:'1px solid #e2e8f0',borderRadius:'6px'}})) : h('p',{},'Google Forms의 /viewform 긴 주소를 입력하세요.')
       );
     }
   });
