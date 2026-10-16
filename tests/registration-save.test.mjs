@@ -13,7 +13,7 @@ class Data {
   delete(key){const copy={...this.value};delete copy[key];return new Data(copy);}
 }
 function fixture({fail=false}={}){
-  const calls=[];const ctx={window:{addEventListener(){},alert(){},KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return request.enabled?{eventId:request.eventId,year:'2026',registrationForm:'https://docs.google.com/forms/d/e/test/viewform'}:{eventId:request.eventId,disabled:true};}}},URL,TextEncoder,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=> 'new-id'}};
+  const calls=[];const ctx={window:{addEventListener(){},alert(){},KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return request.enabled?{eventId:request.eventId,year:'2026',labelVersion:2,registrationForm:'https://docs.google.com/forms/d/e/test/viewform'}:{eventId:request.eventId,disabled:true};}}},URL,TextEncoder,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=> 'new-id'}};
   vm.runInNewContext(source.slice(start,end)+'\nthis.sync=syncCalendarRegistration;',ctx);
   return {calls,sync:(value,metadata={})=>ctx.sync({get:key=>key==='collection'?'calendar':key==='data'?new Data(value):metadata[key]})};
 }
@@ -42,4 +42,11 @@ test('an existing unlinked schedule keeps its ID across editor reloads and subse
   assert.equal(edited.get('registrationEventId'),first.get('registrationEventId'));
   const other=await fixture().sync(data,{...metadata,path:'src/content/calendar/other.json'});
   assert.notEqual(other.get('registrationEventId'),first.get('registrationEventId'));
+});
+
+test('saving sends the selected category to Google rather than silently dropping it',async()=>{
+  for(const category of ['forum','education','monetize','other']) {
+    const f=fixture();await f.sync({...base,category,registrationEnabled:true});
+    assert.equal(f.calls[0].category,category);
+  }
 });

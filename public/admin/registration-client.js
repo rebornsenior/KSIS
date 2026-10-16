@@ -51,7 +51,7 @@ window.KSISRegistration = (() => {
     if(!response.ok || result.error) {
       if(response.status===401) credential=null;
       const message=String(result.error?.details?.[0]?.errorMessage || result.error?.status || 'CONNECTION_FAILED');
-      const codes=['AUTOMATION_NOT_CONFIGURED','INVALID_ACTION','FORBIDDEN','EVENT_YEAR_CHANGED','EVENT_LABEL_CONFLICT','INVALID_EVENT_DATE','INVALID_EVENT_TITLE','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND'];
+      const codes=['AUTOMATION_NOT_CONFIGURED','INVALID_ACTION','FORBIDDEN','EVENT_YEAR_CHANGED','EVENT_LABEL_CONFLICT','INVALID_EVENT_DATE','INVALID_EVENT_TITLE','INVALID_EVENT_CATEGORY','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND'];
       throw new Error(codes.find(code=>message.includes(code)) || 'CONNECTION_FAILED');
     }
     return result.response?.result;

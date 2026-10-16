@@ -100,17 +100,18 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     data=data.set('registrationEventId',eventId);
     if(!eventId || !title?.trim() || !date) throw new Error('신청 연결을 위해 일정 제목과 날짜를 입력해 주세요.');
     try {
-      const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,enabled});
+      const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,category:data.get('category') || 'other',enabled});
       if(!enabled) {
         if(result?.eventId!==eventId || result.disabled!==true) throw new Error('INVALID_SYNC_RESULT');
         return data.set('registrationForm','').delete('registrationRefreshRequested');
       }
+      if(result?.labelVersion!==2) throw new Error('REGISTRATION_CODE_OUTDATED');
       let url;
       try {url=new URL(result?.registrationForm);} catch {throw new Error('INVALID_SYNC_RESULT');}
       if(result.eventId!==eventId || result.year!==date.slice(0,4) || url.protocol!=='https:' || url.hostname!=='docs.google.com' || !/^\/forms\/d\//.test(url.pathname)) throw new Error('INVALID_SYNC_RESULT');
       return data.set('registrationForm',url.href).set('registrationEventId',result.eventId).set('registrationYear',result.year).delete('registrationRefreshRequested');
     } catch(error) {
-      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 로그인 창이 열리지 않았거나 완료되지 않았습니다. 신청 명단 관리의 게시 전 구글 계정 연결 버튼을 먼저 눌러 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
+      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 로그인 창이 열리지 않았거나 완료되지 않았습니다. 신청 명단 관리의 게시 전 구글 계정 연결 버튼을 먼저 눌러 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION' || error.message==='REGISTRATION_CODE_OUTDATED'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
       window.alert(reason+' 일정 저장을 중단했습니다. 다시 시도해 주세요.');
       throw error;
     }

@@ -80,6 +80,8 @@ function ksisSyncEvent_(request, email) {
   if (typeof request.eventId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(request.eventId)) throw new Error('INVALID_EVENT_ID');
   if (typeof request.title !== 'string' || !request.title.trim() || request.title.length > 200) throw new Error('INVALID_EVENT_TITLE');
   if (typeof request.date !== 'string' || !/^20\d{2}-\d{2}-\d{2}$/.test(request.date) || new Date(request.date+'T00:00:00Z').toISOString().slice(0,10)!==request.date) throw new Error('INVALID_EVENT_DATE');
+  const categoryLabels={forum:'정기 포럼',education:'교육 특강',monetize:'수익 실무',other:'친목 소모임'};
+  if(request.category!==undefined && !Object.prototype.hasOwnProperty.call(categoryLabels,request.category)) throw new Error('INVALID_EVENT_CATEGORY');
   const year = request.date.slice(0,4);
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
@@ -121,7 +123,8 @@ function ksisSyncEvent_(request, email) {
     if (event && event.formId!==registry.formId) throw new Error('EVENT_YEAR_CHANGED');
     const list = form.getItemById(Number(registry.eventItemId)).asListItem();
     const oldValues=event ? Array.from(new Set([event.eventValue,...(event.previousValues || [])])) : [];
-    const label=request.date.replace(/-/g,'.')+' | '+request.title.trim();
+    const category=request.category || (event && event.category) || 'other';
+    const label=request.date.replace(/-/g,'.')+' | '+categoryLabels[category]+' | '+JSON.stringify(request.title.trim());
     const choices=list.getChoices().map(choice=>choice.getValue());
     // Google dropdown answers contain only visible text. Reserve every historical
     // label permanently so two events can never share the same response value.
@@ -136,7 +139,7 @@ function ksisSyncEvent_(request, email) {
     event.previousValues=oldValues.filter(value=>value!==label);
     event.eventValue=label;
     event.year=year; event.enabled=true;
-    event.title=request.title.trim(); event.date=request.date;
+    event.title=request.title.trim(); event.date=request.date; event.category=category; event.labelVersion=2;
     // Persist aliases before replacing the dropdown: old responses stay readable,
     // including if Google rejects the choice update and the caller retries.
     store.setProperty('KSIS_EVENT_'+request.eventId,JSON.stringify(event));
@@ -159,11 +162,31 @@ function ksisSyncEvent_(request, email) {
 function ksisEventInfo_(eventId,event,form) {
   const item = form.getItemById(Number(event.eventItemId)).asListItem();
   const url = form.createResponse().withItemResponse(item.createResponse(event.eventValue)).toPrefilledUrl();
-  return {eventId,title:event.title || event.eventValue,date:event.date || '',year:event.year || '',registrationForm:url};
+  return {eventId,title:event.title || event.eventValue,date:event.date || '',year:event.year || '',category:event.category || '',labelVersion:event.labelVersion || 1,registrationForm:url};
 }
 
 function ksisChoiceKey_(formId,value) {
   const digest=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,value,Utilities.Charset.UTF_8);
   const hash=digest.map(byte=>('0'+((byte+256)%256).toString(16)).slice(-2)).join('');
   return 'KSIS_CHOICE_'+formId+'_'+hash;
+}
+/** One-time display migration for the two confirmed existing events.
+ * Preserves old response values as aliases. Skips closed events.
+ */
+function updateExistingRegistrationLabels() {
+  const store=PropertiesService.getScriptProperties();
+  const config=JSON.parse(store.getProperty('KSIS_REGISTRATION') || '{}');
+  const email=Session.getActiveUser().getEmail().trim().toLowerCase();
+  const targets=[
+    {eventId:'2026-forum-37',date:'2026-11-07',title:'제37회 비즈니스교류회',category:'forum'},
+    {eventId:'evt-976cd8e1-1c7e-46f6-b9e8-e04a115fe169',date:'2026-06-16',title:'바람이 전하는 노래- 우리세대의 기억과 위로',category:'other'}
+  ];
+  const results=targets.map(target=>{
+    const event=JSON.parse(store.getProperty('KSIS_EVENT_'+target.eventId) || 'null') || (config.events || {})[target.eventId];
+    if(!event || event.enabled===false) return {eventId:target.eventId,skipped:true};
+    const result=ksisSyncEvent_({...target,title:event.title || target.title,date:event.date || target.date,enabled:true},email);
+    return {eventId:result.eventId,labelVersion:result.labelVersion,category:result.category};
+  });
+  console.log(JSON.stringify(results,null,2));
+  return results;
 }
