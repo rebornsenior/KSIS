@@ -69,6 +69,24 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   CMS.registerWidget('registration-roster',RegistrationRosterControl);
   let pendingRegistrationId=null;
   window.addEventListener('hashchange',()=>{pendingRegistrationId=null;});
+  // Confirmed from the form's label ownership record on 2026-10-16.
+  // Repair older workflow drafts too, without changing the form or its responses.
+  const registrationIdMigrations=Object.freeze({
+    'evt-d829e7c9-231a-47e0-9244-7b5a256f1231':'evt-976cd8e1-1c7e-46f6-b9e8-e04a115fe169'
+  });
+  const registrationIdFor=async(entry,data,generate)=>{
+    const saved=data.get('registrationEventId');
+    if(saved) return registrationIdMigrations[saved] || saved;
+    if(!generate) return '';
+    // Existing files keep the same identity even if Google succeeds but CMS save
+    // fails, or the editor is reopened in another tab before metadata is saved.
+    const path=!entry.get('newRecord') && (entry.get('path') || entry.get('slug'));
+    if(path) {
+      const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('ksis:calendar:'+path));
+      return 'evt-'+Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
+    }
+    return pendingRegistrationId ||= 'evt-'+crypto.randomUUID();
+  };
   const syncCalendarRegistration=async(entry)=>{
     let data=entry.get('data').delete('registrationRefreshRequested');
     if(entry.get('collection')!=='calendar') return data;
@@ -78,7 +96,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       throw new Error('REGISTRATION_DISABLED');
     }
     if(!enabled && !data.get('registrationYear') && !data.get('registrationForm') && !data.get('registrationEventId')) return data;
-    const eventId=data.get('registrationEventId') || (enabled ? (pendingRegistrationId ||= 'evt-'+crypto.randomUUID()) : ''),title=data.get('title'),date=data.get('date');
+    const eventId=await registrationIdFor(entry,data,enabled),title=data.get('title'),date=data.get('date');
     data=data.set('registrationEventId',eventId);
     if(!eventId || !title?.trim() || !date) throw new Error('신청 연결을 위해 일정 제목과 날짜를 입력해 주세요.');
     try {
@@ -92,7 +110,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       if(result.eventId!==eventId || result.year!==date.slice(0,4) || url.protocol!=='https:' || url.hostname!=='docs.google.com' || !/^\/forms\/d\//.test(url.pathname)) throw new Error('INVALID_SYNC_RESULT');
       return data.set('registrationForm',url.href).set('registrationEventId',result.eventId).set('registrationYear',result.year).delete('registrationRefreshRequested');
     } catch(error) {
-      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 로그인 창이 열리지 않았거나 완료되지 않았습니다. 신청 명단 관리의 게시 전 구글 계정 연결 버튼을 먼저 눌러 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'같은 날짜와 제목을 사용한 다른 행사가 있어 명단을 구분할 수 없습니다. 제목을 다르게 입력해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
+      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 로그인 창이 열리지 않았거나 완료되지 않았습니다. 신청 명단 관리의 게시 전 구글 계정 연결 버튼을 먼저 눌러 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
       window.alert(reason+' 일정 저장을 중단했습니다. 다시 시도해 주세요.');
       throw error;
     }
@@ -116,7 +134,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(!entry || entry.get('collection')!=='calendar') return;
     const data=entry.get('data');
     if(!data.get('registrationEnabled') && !data.get('registrationYear') && !data.get('registrationForm') && !data.get('registrationEventId')) return;
-    const eventId=data.get('registrationEventId'),title=data.get('title'),date=data.get('date');
+    const eventId=await registrationIdFor(entry,data,false),title=data.get('title'),date=data.get('date');
     try {
       if(!eventId || !title || !date) throw new Error('MISSING_REGISTRATION_METADATA');
       const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,enabled:false});

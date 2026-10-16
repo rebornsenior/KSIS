@@ -7,8 +7,8 @@ const start=source.indexOf('  const closeCalendarRegistration=');
 const end=source.indexOf("  CMS.registerEventListener({name:'preUnpublish'",start);
 function fixture({fail=false,confirmed=true}={}) {
   const calls=[],alerts=[];
-  const context={window:{alert:message=>alerts.push(message),KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return {eventId:request.eventId,disabled:confirmed};}}}};
-  vm.runInNewContext(source.slice(start,end)+'\nthis.close=closeCalendarRegistration;',context);
+  const context={window:{addEventListener(){},alert:message=>alerts.push(message),KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return {eventId:request.eventId,disabled:confirmed};}}}};
+  vm.runInNewContext(source.slice(source.indexOf('  let pendingRegistrationId='),source.indexOf('  const boardValidation='))+source.slice(start,end)+'\nthis.close=closeCalendarRegistration;',context);
   const entry=(data={},collection='calendar')=>({get:key=>key==='collection'?collection:{get:key=>data[key]}});
   return {close:context.close,calls,alerts,entry};
 }
@@ -17,3 +17,8 @@ test('deleting a connected schedule closes only its form option before deletion'
 test('unrelated and unconnected entries never touch Google Forms',async()=>{const f=fixture();await f.close({entry:f.entry({})});await f.close({entry:f.entry(linked,'forum')});assert.equal(f.calls.length,0);});
 test('failed or unconfirmed Google cleanup blocks schedule deletion',async()=>{for(const options of [{fail:true},{confirmed:false}]){const f=fixture(options);await assert.rejects(f.close({entry:f.entry(linked)}));assert.equal(f.alerts.length,1);}});
 test('a previously closed event remains safe to delete without removing responses',async()=>{const f=fixture();await f.close({entry:f.entry({...linked,registrationEnabled:false})});assert.equal(f.calls[0].enabled,false);assert.ok(!f.calls.some(call=>call.action==='delete'));});
+
+test('deleting a legacy draft closes the actual Google event rather than the stale ID',async()=>{
+  const f=fixture();await f.close({entry:f.entry({...linked,registrationEventId:'evt-d829e7c9-231a-47e0-9244-7b5a256f1231'})});
+  assert.equal(f.calls[0].eventId,'evt-976cd8e1-1c7e-46f6-b9e8-e04a115fe169');
+});
