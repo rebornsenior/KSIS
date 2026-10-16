@@ -1,3 +1,5 @@
+import PostSortControl from '../../components/PostSortControl';
+import {sortPosts,postDate,type PostSortOrder} from '../../content/sort-posts';
 import AuthorBadge from '../../components/AuthorBadge';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -116,6 +118,7 @@ function ForumCard({ forum, categories, setSelectedForum }: ForumCardProps) {
 }
 
 export default function ForumComponent({ previewPost }: { previewPost?: any } = {}) {
+  const [sortOrder,setSortOrder]=useState<PostSortOrder>('newest');
   const [storedForum, setSelectedForum] = useState<any | null>(null);
   const selectedForum = previewPost || storedForum;
 
@@ -125,7 +128,7 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
   ];
 
   const forums = forumsData;
-  const filteredForums = forums;
+  const filteredForums = sortPosts(forums,sortOrder);
 
   const handleSelectForum = (forum: any) => {
     setSelectedForum(forum);
@@ -242,6 +245,7 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
     <div className="bg-slate-50 min-h-[500px]">
       {/* List Content */}
       <div className="mt-6 md:mt-8">
+        <PostSortControl value={sortOrder} onChange={setSortOrder} />
         {/* Unified Responsive 1-Column List View */}
         <motion.div 
           layout

@@ -1,3 +1,5 @@
+import PostSortControl from '../../components/PostSortControl';
+import {sortPosts,postDate,type PostSortOrder} from '../../content/sort-posts';
 import AuthorBadge from '../../components/AuthorBadge';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -102,6 +104,7 @@ function EducationCard({ clas, categories, setSelectedClass }: EducationCardProp
 }
 
 export default function EducationComponent({ previewPost }: { previewPost?: any } = {}) {
+  const [sortOrder,setSortOrder]=useState<PostSortOrder>('newest');
   const [storedClass, setSelectedClass] = useState<any | null>(null);
   const selectedClass = previewPost || storedClass;
 
@@ -110,7 +113,7 @@ export default function EducationComponent({ previewPost }: { previewPost?: any 
     { id: 'marketing', name: '디지털 역량 강화', icon: Layers, color: '#4F46E5' }
   ];
 
-  const classes = educationsData;
+  const classes = sortPosts(educationsData,sortOrder);
 
   const handleSelectClass = (clas: any) => {
     setSelectedClass(clas);
@@ -227,6 +230,7 @@ export default function EducationComponent({ previewPost }: { previewPost?: any 
     <div className="bg-slate-50 min-h-[500px]">
       {/* Grid Content */}
       <div className="mt-1.5 sm:mt-4">
+        <PostSortControl value={sortOrder} onChange={setSortOrder} />
         <div className="space-y-6">
           <AnimatePresence mode="popLayout">
             {classes.map((clas) => (

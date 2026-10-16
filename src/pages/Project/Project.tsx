@@ -1,3 +1,5 @@
+import PostSortControl from '../../components/PostSortControl';
+import {sortPosts,postDate,type PostSortOrder} from '../../content/sort-posts';
 import AuthorBadge from '../../components/AuthorBadge';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -141,6 +143,7 @@ function ExpertCard({ exp, categories, setSelectedExpert }: ExpertCardProps) {
             {exp.categoryName}
           </span>
         </div>
+        {postDate(exp.date) && <time dateTime={postDate(exp.date).replaceAll('.','-')} className="block text-xs text-slate-400 mb-2">{postDate(exp.date)}</time>}
         <h3 
           className="text-xl font-bold mb-2 leading-normal break-keep transition-colors duration-300"
           style={{ color: isHovered ? iconColor : '#002147' }}
@@ -344,6 +347,7 @@ export default function ProjectComponent({
   setSelectedCategory?: (cat: string | null) => void;
   previewPost?: any;
 }) {
+  const [sortOrder,setSortOrder]=useState<PostSortOrder>('newest');
   const [internalCategory, setInternalCategory] = useState<string | null>(null);
   const selectedCategory = propCategory !== undefined ? propCategory : internalCategory;
   const setSelectedCategory = propSetSelectedCategory || setInternalCategory;
@@ -362,9 +366,7 @@ export default function ProjectComponent({
     ...localPosts
   ];
 
-  const filteredExperts = selectedCategory
-    ? experts.filter((exp) => exp.category === selectedCategory)
-    : experts;
+  const filteredExperts = sortPosts(selectedCategory ? experts.filter((exp) => exp.category === selectedCategory) : experts,sortOrder);
 
   if (selectedCategory === null) {
     return (
@@ -651,6 +653,7 @@ export default function ProjectComponent({
 
       {/* Grid Content */}
       <div className="mt-2">
+        <PostSortControl value={sortOrder} onChange={setSortOrder} />
         {/* Desktop/Tablet Grid View */}
         <motion.div 
           layout
@@ -705,7 +708,7 @@ export default function ProjectComponent({
                     <div className="flex items-center gap-1.5 pt-1 text-[11px] text-slate-400 font-medium font-sans">
                       <span>{exp.specialty}</span>
                       <span>•</span>
-                      <span>{exp.date || '2026.06.18'}</span>
+                      <span>{postDate(exp.date)}</span>
                     </div>
                   </div>
 
