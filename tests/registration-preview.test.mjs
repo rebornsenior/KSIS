@@ -24,13 +24,18 @@ test('untrusted URLs cannot create a preview frame or an external action link',(
   }
 });
 
-test('preview isolates Google login/drafts and strips prefills without changing the actual application link',()=>{
-  const value='https://docs.google.com/forms/d/e/test/viewform?usp=pp_url&entry.123=old-answer&authuser=0#draft';
+test('preview never loads Google, cookies or saved drafts; real application link stays intact',()=>{
+  const value='https://docs.google.com/forms/d/e/test/viewform?usp=pp_url&entry.123='+encodeURIComponent('2026.11.07 | 정기 포럼 | "행사 <img src=x onerror=alert(1)>"');
   const all=nodes(context.control.render.call({props:{value,onChange(){}}}));
   const frame=all.find(node=>node.tag==='iframe');
-  assert.equal(frame.props.credentialless,'');
-  const preview=new URL(frame.props.src);
-  assert.equal(preview.search,'?embedded=true');
+  assert.equal(frame.props.src,undefined);
+  assert.equal(frame.props.sandbox,'');
+  assert.ok(frame.props.srcDoc.includes('Content-Security-Policy'));
+  assert.ok(frame.props.srcDoc.includes('default-src &#39;none&#39;'));
+  assert.ok(frame.props.srcDoc.includes('&lt;img'));
+  assert.ok(!frame.props.srcDoc.includes('<img'));
+  assert.ok(!frame.props.srcDoc.includes('<script'));
+  assert.ok(!frame.props.srcDoc.includes('<form'));
+  for(const label of ['참가할 행사','신청자 이름','전화번호','입금자명']) assert.ok(frame.props.srcDoc.includes(label));
   assert.equal(all.find(node=>node.tag==='a').props.href,value);
-  assert.ok(!frame.props.sandbox.includes('allow-forms'));
 });

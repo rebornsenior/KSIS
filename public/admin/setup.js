@@ -29,21 +29,25 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   const RegistrationFormControl = window.createClass({
     render() {
       const h=window.h, value=this.props.value || '';
-      let embed='';
+      let embed='',eventLabel='행사 선택';
       try {
         const url=new URL(value);
         if(url.protocol==='https:' && url.hostname==='docs.google.com' && /^\/forms\/d\/(?:e\/)?[a-zA-Z0-9_-]+\/viewform$/.test(url.pathname)) {
-          // Preview the blank public form, never a prefilled response draft.
-          // Keep the original URL untouched for the real application link.
-          url.search='';
-          url.searchParams.set('embedded','true'); embed=url.href;
+          embed=value;
+          for(const [key,answer] of url.searchParams) {
+            if(/^entry\.\d+$/.test(key) && /^20\d{2}[.-]\d{2}[.-]\d{2}.*[|·]/.test(answer)) {eventLabel=answer;break;}
+          }
         }
       } catch {}
+      const escape=text=>String(text).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+      // Render the standard application fields locally. No Google document,
+      // account session, saved response, scripts or external resources load here.
+      const preview='<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; style-src &#39;unsafe-inline&#39;"><style>body{margin:0;padding:12px;background:#f0ebf8;color:#202124;font:16px Arial,sans-serif}main{max-width:640px;margin:auto}section{background:white;border:1px solid #dadce0;border-radius:8px;padding:24px;margin-bottom:12px}header section{border-top:10px solid #673ab7}h1{font-size:28px;font-weight:400;margin:0 0 16px}p{line-height:1.6;margin:8px 0}label{display:block;margin-bottom:24px}label span{color:#d93025}input{font:inherit;width:100%;box-sizing:border-box;border:0;border-bottom:1px dotted #999;background:white;padding:10px 0;color:#555}small{color:#666}.choice{line-height:1.6;color:#444}</style></head><body><main><header><section><h1>참가 신청서 구성 미리보기</h1><p>참가할 행사를 선택한 뒤 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.</p><small>보기 전용 구성 안내입니다. 실제 Google Forms 화면은 위 링크에서 확인하세요.</small></section></header><section><label>참가할 행사 <span>*</span></label><div class="choice">'+escape(eventLabel)+'</div></section>'+['신청자 이름','전화번호','입금자명'].map(title=>'<section><label>'+title+' <span>*</span></label><input disabled placeholder="내 답변" aria-label="'+title+'"></section>').join('')+'</main></body></html>';
       return h('div',{},
         h('input',{type:'url',id:this.props.forID,value,placeholder:'Google Forms 신청자용 긴 링크',onChange:e=>this.props.onChange(e.target.value),style:{width:'100%',padding:'12px',border:'1px solid #cbd5e1',borderRadius:'4px'}}),
-        h('p',{},'보기 전용 신청서입니다. 여기서는 입력·제출할 수 없습니다. 일정 저장은 화면 맨 위의 게시 버튼을 사용하세요.'),
+        h('p',{},'신청서 항목 구성 미리보기입니다. 여기서는 입력·제출할 수 없습니다. 실제 구글 폼 화면은 아래 링크에서 확인하세요.'),
         embed && h('a',{href:value,target:'_blank',rel:'noopener noreferrer'},'실제 신청서 새 창에서 확인 · 제출 시 실제 접수'),
-        embed ? h('div',{inert:true,'aria-label':'보기 전용 신청서 미리보기'},h('iframe',{title:'참가 신청 폼 미리보기 · 입력 및 제출 불가',credentialless:'',src:embed,tabIndex:-1,sandbox:'allow-scripts allow-same-origin',referrerPolicy:'no-referrer',style:{width:'100%',height:'750px',border:'1px solid #e2e8f0',borderRadius:'6px'}})) : h('p',{},'Google Forms의 /viewform 긴 주소를 입력하세요.')
+        embed ? h('div',{inert:true,'aria-label':'보기 전용 신청서 미리보기'},h('iframe',{title:'참가 신청 폼 미리보기 · 입력 및 제출 불가',srcDoc:preview,tabIndex:-1,sandbox:'',referrerPolicy:'no-referrer',style:{width:'100%',height:'750px',border:'1px solid #e2e8f0',borderRadius:'6px'}})) : h('p',{},'Google Forms의 /viewform 긴 주소를 입력하세요.')
       );
     }
   });
