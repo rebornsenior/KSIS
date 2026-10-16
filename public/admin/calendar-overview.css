@@ -1,0 +1,33 @@
+#ksis-calendar-overview{box-sizing:border-box;margin:20px 0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:22px;color:#002147;font-family:inherit}
+#ksis-calendar-overview *{box-sizing:border-box}
+#ksis-calendar-overview .kc-top,#ksis-calendar-overview .kc-nav,#ksis-calendar-overview .kc-actions{display:flex;align-items:center;gap:8px}
+#ksis-calendar-overview .kc-top{justify-content:space-between;flex-wrap:wrap;margin-bottom:22px}
+#ksis-calendar-overview h2{font-size:20px;margin:0 8px;font-weight:800}
+#ksis-calendar-overview button{background:#fff;color:#002147;border:1px solid #d8e1ec;border-radius:6px;padding:7px 10px;font:inherit;cursor:pointer}
+#ksis-calendar-overview button:hover{background:#edf3fa}
+#ksis-calendar-overview button:focus-visible,#ksis-calendar-overview a:focus-visible{outline:2px solid #355eae;outline-offset:2px}
+#ksis-calendar-overview .kc-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+#ksis-calendar-overview .kc-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+#ksis-calendar-overview .kc-weekday{text-align:center;font-size:12px;color:#718096;padding:4px 0 12px}
+#ksis-calendar-overview .kc-weekday:first-child{color:#d44454}
+#ksis-calendar-overview .kc-weekday:nth-child(7){color:#355eae}
+#ksis-calendar-overview .kc-day{position:relative;min-height:44px;padding:6px 0 14px;border-color:transparent;font-size:13px}
+#ksis-calendar-overview .kc-has-events{background:#edf3fa;font-weight:800}
+#ksis-calendar-overview .kc-today{border-color:#c59b55}
+#ksis-calendar-overview .kc-selected{background:#002147!important;color:white}
+#ksis-calendar-overview .kc-count{position:absolute;bottom:2px;left:0;right:0;font-size:9px;color:#55708e}
+#ksis-calendar-overview .kc-selected .kc-count{color:#fff}
+#ksis-calendar-overview h3{font-size:16px;margin:0 0 6px}
+#ksis-calendar-overview .kc-note{font-size:12px;color:#7b8ba2;line-height:1.7;margin:10px 0 0}
+#ksis-calendar-overview .kc-events>.kc-note{margin:0 0 12px}
+#ksis-calendar-overview .kc-rows{max-height:350px;overflow-y:auto}
+#ksis-calendar-overview .kc-event{display:flex;flex-direction:column;gap:6px;padding:14px 12px;border:1px solid #e2e8f0;border-radius:7px;margin-bottom:9px;color:#002147;text-decoration:none}
+#ksis-calendar-overview .kc-event:hover,#ksis-calendar-overview .kc-highlight{background:#f1f5fb;border-color:#809ac1}
+#ksis-calendar-overview .kc-date{font-size:11px;color:#607795;line-height:1.6}
+#ksis-calendar-overview .kc-event strong{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+#ksis-calendar-overview .kc-category{font-size:10px;color:#9b773e}
+#ksis-calendar-overview .kc-empty{font-size:13px;color:#7b8ba2;padding:35px 0}
+@media(max-width:900px){#ksis-calendar-overview{padding:16px}#ksis-calendar-overview .kc-layout{grid-template-columns:1fr}#ksis-calendar-overview .kc-rows{max-height:360px}}
+
+/* This collection is managed through its calendar and month list. */
+#ksis-calendar-overview ~ *{display:none!important}

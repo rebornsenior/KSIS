@@ -7,7 +7,7 @@ const root=new URL('../',import.meta.url);
 const source=readFileSync(new URL('public/admin/registration-client.js',root),'utf8');
 function client(origin) {
   const scripts=[];
-  const ctx=vm.createContext({location:{origin},window:{},document:{createElement:()=>({}),head:{append:s=>scripts.push(s)}}});
+  const ctx=vm.createContext({setTimeout:()=>1,clearTimeout(){},location:{origin},window:{},document:{createElement:()=>({}),head:{append:s=>scripts.push(s)}}});
   vm.runInContext(source,ctx);return {api:ctx.window.KSISRegistration,scripts};
 }
 test('official www admin and configured localhost origins can load Google auth',()=>{
