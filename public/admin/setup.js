@@ -24,6 +24,37 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
   });
   CMS.registerWidget('alignment', AlignmentControl);
+  // Album picker uses its own media control identity so a native multi-selection
+  // is consumed once and preserves the existing object/caption data format.
+  const AlbumPhotosControl=window.createClass({
+    getInitialState(){return {controlID:'ksis-album-'+Math.random().toString(36).slice(2)};},
+    shouldComponentUpdate(next){return this.props.value!==next.value||this.props.mediaPaths!==next.mediaPaths||this.props.getAsset!==next.getAsset;},
+    componentDidUpdate(){
+      const paths=this.props.mediaPaths.get(this.state.controlID);
+      if(!paths)return;
+      this.props.onRemoveInsertedMedia(this.state.controlID);
+      const current=this.props.value?.toJS?this.props.value.toJS():(this.props.value||[]);
+      const selected=paths?.toJS?paths.toJS():Array.isArray(paths)?paths:[paths];
+      const unique=[...new Set(selected.filter(Boolean))];
+      this.props.onChange(unique.map(url=>current.find(photo=>photo.url===url)||{url}));
+    },
+    isValid(){return !!this.props.value?.size || !!this.props.value?.length;},
+    componentWillUnmount(){this.props.onRemoveMediaControl(this.state.controlID);},
+    render(){
+      const h=window.h,photos=this.props.value?.toJS?this.props.value.toJS():(this.props.value||[]);
+      const update=next=>this.props.onChange(next);
+      const library=this.props.field.get('media_library').set('allow_multiple',true).setIn(['config','multiple'],true);
+      return h('div',{},
+        h('button',{type:'button',onClick:()=>this.props.onOpenMediaLibrary({controlID:this.state.controlID,forImage:true,value:photos.map(photo=>photo.url),allowMultiple:true,config:library.get('config'),field:this.props.field})},'사진 선택 · 여러 장 추가'),
+        h('p',{},'선택 창에서 사진을 여러 장 클릭한 뒤 「선택한 것으로 결정」을 누르세요.'),
+        ...photos.map((photo,index)=>h('div',{key:photo.url,style:{display:'flex',gap:8,alignItems:'center',marginTop:8}},
+          h('img',{src:String(this.props.getAsset(photo.url)),alt:'',style:{width:64,height:64,objectFit:'cover'}}),
+          h('input',{type:'text',value:photo.caption||'',placeholder:'사진 설명 (선택사항)','aria-label':(index+1)+'번 사진 설명',style:{flex:1,padding:8},onChange:event=>update(photos.map((item,i)=>i===index?{...item,caption:event.target.value}:item))}),
+          h('button',{type:'button',disabled:index===0,'aria-label':(index+1)+'번 사진 앞으로',onClick:()=>{const next=[...photos];[next[index-1],next[index]]=[next[index],next[index-1]];update(next);}},'↑'),
+          h('button',{type:'button',onClick:()=>update(photos.filter((_,i)=>i!==index))},'삭제'))));
+    }
+  });
+  CMS.registerWidget('album-photos',AlbumPhotosControl);
 
   // Form URL is CMS content; private responses are fetched only in the local panel.
   const RegistrationFormControl = window.createClass({
@@ -241,7 +272,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'앨범 제목',name:'title',widget:'string'},
         {label:'활동 날짜',name:'date',widget:'datetime',format:'YYYY-MM-DD',time_format:false},
         {label:'대표 사진',name:'image',widget:'image'},
-        {label:'앨범 사진',name:'images',widget:'list',min:1,fields:[{label:'사진',name:'url',widget:'image'},{label:'사진 설명 (선택사항)',name:'caption',widget:'string',required:false}]},
+        {label:'앨범 사진',name:'images',widget:'album-photos',media_library:{allow_multiple:true},required:true},
         {label:'관련 게시글 링크 (선택사항)',name:'relatedUrl',widget:'string',required:false,pattern:['^(https?://|/#[/]post/)','홈페이지 게시글 경로 /#/post/... 또는 https:// 주소를 입력하세요.'],hint:'연결한 경우 앨범에 관련 게시글 보기 버튼이 표시됩니다.'},
       ],
     },

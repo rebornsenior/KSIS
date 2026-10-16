@@ -18,8 +18,11 @@ export default function ActivityGallery(){
   const [expanded,setExpanded]=useState(false);
   const [album,setAlbum]=useState<Album|null>(null);
   const [index,setIndex]=useState(0);
-  const [introHeight,setIntroHeight]=useState(420);
-  const hold=useRef<HTMLDivElement>(null),intro=useRef<HTMLDivElement>(null),end=useRef<HTMLDivElement>(null);
+  const [rowHeight,setRowHeight]=useState(0);
+  const [fullHeight,setFullHeight]=useState(0);
+  const [progress,setProgress]=useState(0);
+  const accumulated=useRef(0);
+  const viewport=useRef<HTMLDivElement>(null),grid=useRef<HTMLDivElement>(null),end=useRef<HTMLDivElement>(null);
   const close=useRef<HTMLButtonElement>(null),opener=useRef<HTMLButtonElement|null>(null);
   const jumpTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const holding=desktop&&!reduced&&albums.length>6;
@@ -28,15 +31,37 @@ export default function ActivityGallery(){
     return()=>media.removeEventListener('change',update);
   },[]);
   useEffect(()=>{
-    if(!intro.current)return;
-    const observer=new ResizeObserver(()=>setIntroHeight(intro.current?.offsetHeight || 420));observer.observe(intro.current);
+    if(!grid.current)return;
+    const measure=()=>{
+      const first=grid.current?.querySelector<HTMLElement>('button');
+      setRowHeight(first?.offsetHeight || 0);setFullHeight(grid.current?.offsetHeight || 0);
+    };
+    measure();const observer=new ResizeObserver(measure);observer.observe(grid.current);
     return()=>observer.disconnect();
   },[desktop]);
   useEffect(()=>{
-    if(!holding||expanded)return;
-    const update=()=>{if(hold.current && hold.current.getBoundingClientRect().top< -180)setExpanded(true);};
-    update();window.addEventListener('scroll',update,{passive:true});return()=>window.removeEventListener('scroll',update);
-  },[holding,expanded]);
+    if(!holding||expanded||album)return;
+    const wheel=(event:WheelEvent)=>{
+      if(event.ctrlKey||event.metaKey||event.deltaY<=0||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!event.cancelable)return;
+      const bounds=viewport.current?.getBoundingClientRect();
+      if(!bounds||bounds.top>innerHeight*.65||bounds.bottom<100)return;
+      // Only consume a bounded amount of downward scrolling over this gallery.
+      // Upward scrolling, zooming and all scrolling elsewhere stay native.
+      event.preventDefault();
+      const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);
+      accumulated.current+=Math.min(delta,100);
+      setProgress(Math.min(accumulated.current/360,1));
+      if(accumulated.current>=360)setExpanded(true);
+    };
+    const scroll=()=>{
+      // Scrollbar dragging, keyboard navigation and other native scroll paths
+      // must also reveal the remaining photos, with no button dependency.
+      const bounds=viewport.current?.getBoundingClientRect();
+      if(bounds && (bounds.top< -80 || (scrollY+innerHeight>=document.documentElement.scrollHeight-8 && bounds.top<innerHeight)))setExpanded(true);
+    };
+    window.addEventListener('wheel',wheel,{passive:false});window.addEventListener('scroll',scroll,{passive:true});
+    return()=>{window.removeEventListener('wheel',wheel);window.removeEventListener('scroll',scroll);};
+  },[holding,expanded,album]);
   useEffect(()=>()=>{if(jumpTimer.current)clearTimeout(jumpTimer.current);},[]);
   const photos=album?.images?.length?album.images:album?[{url:album.image}]:[];
   useEffect(()=>{
@@ -57,27 +82,25 @@ export default function ActivityGallery(){
     window.addEventListener('keydown',key);
     return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',key);opener.current?.focus();};
   },[album,photos.length]);
-  const card=(item:Album,i:number)=> <motion.button type="button" className="activity-gallery__card" key={item.id}
-    initial={reduced?false:{opacity:0,y:14}} whileInView={reduced?{}:{opacity:1,y:0}} viewport={{once:true,amount:0.1}}
-    transition={{duration:reduced?0:.45,delay:reduced?0:(i%6)*.045}}
+  const card=(item:Album,i:number)=> <motion.div className="activity-gallery__tile" key={item.id}
+    initial={false} animate={{y:holding&&!expanded&&i>=6?100-progress*20:0,opacity:holding&&!expanded&&i>=6?0:1}}
+    transition={{duration:reduced?0:expanded?1.1:.18,ease:[.22,1,.36,1]}}
+    ><button type="button" className="activity-gallery__card" style={{pointerEvents:holding&&!expanded&&i>=6?'none':undefined}} tabIndex={holding&&!expanded&&i>=6?-1:0} aria-hidden={holding&&!expanded&&i>=6}
     aria-label={'사진 앨범 열기: '+item.title}
     onClick={event=>{opener.current=event.currentTarget;setIndex(0);setAlbum(item);}}>
       <img src={item.image} alt={item.title} loading="lazy" />
-      <span className="activity-gallery__caption"><strong>{item.title}</strong><time>{postDate(item.date)}</time></span>
-    </motion.button>;
+      <span className="activity-gallery__caption"><span><strong>{item.title}</strong><time>{postDate(item.date)}</time></span></span>
+    </button></motion.div>;
   const jump=()=>{setExpanded(true);if(jumpTimer.current)clearTimeout(jumpTimer.current);jumpTimer.current=setTimeout(()=>end.current?.scrollIntoView({behavior:reduced?'instant':'smooth',block:'end'}),reduced?0:650);};
   return <section id="gallery-section" className="activity-gallery">
-    <div ref={hold} style={{height:holding?introHeight+320:undefined}}>
-      <div ref={intro} className={holding?'activity-gallery__intro activity-gallery__intro--hold':'activity-gallery__intro'}>
-        <div className="activity-gallery__heading"><div><span>KSIS ACTIVITY GALLERY</span><h2>협회 주요 활동 갤러리</h2><p>{holding&&!expanded?'아래로 스크롤하면 활동 앨범이 펼쳐집니다.':'사진을 눌러 활동 앨범을 확인하세요.'}</p></div>
-          <button type="button" className="activity-gallery__jump" onClick={jump} aria-label="갤러리 끝으로" title="갤러리 끝으로"><ArrowDown size={22}/></button>
-        </div>
-        <div className="activity-gallery__grid">{(desktop?albums.slice(0,6):albums).map(card)}</div>
-      </div>
+    <div className="activity-gallery__heading"><span>KSIS ACTIVITY GALLERY</span><h2>협회 주요 활동 갤러리</h2></div>
+    <div ref={viewport} className="activity-gallery__viewport">
+      <div ref={grid} className="activity-gallery__grid">{albums.map(card)}</div>
+      {holding&&rowHeight>0&&<motion.div className="activity-gallery__veil" aria-hidden="true" initial={false}
+        style={{top:rowHeight+10,height:Math.max(0,fullHeight-rowHeight-10),background:'linear-gradient(to bottom,rgba(241,245,249,0),#f1f5f9 110px)'}}
+        animate={{opacity:expanded?0:1}} transition={{duration:expanded?1.1:.18,ease:[.16,1,.3,1]}}/>}
     </div>
-    {desktop&&albums.length>6&&<motion.div className="activity-gallery__more" initial={false} animate={{gridTemplateRows:expanded||!holding?'1fr':'0fr',opacity:expanded||!holding?1:0}} transition={{duration:reduced?0:.6,ease:[.22,1,.36,1]}} aria-hidden={holding&&!expanded} inert={holding&&!expanded?true:undefined}>
-      <div><div className="activity-gallery__grid">{albums.slice(6).map(card)}</div></div>
-    </motion.div>}
+    {desktop&&holding&&<div className="activity-gallery__jump-row"><button type="button" className="activity-gallery__jump" onClick={jump} aria-label="갤러리 끝으로" title="갤러리 끝으로"><ArrowDown size={22}/></button></div>}
     {!albums.length&&<p>등록된 활동 앨범이 없습니다.</p>}
     <div ref={end}/>
     <AnimatePresence>{album&&<motion.div className="activity-gallery__overlay" role="dialog" aria-modal="true" aria-labelledby="activity-album-title" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setAlbum(null)}>

@@ -132,7 +132,7 @@ export default function Community() {
             {/* Post Lists Column */}
             <div className="space-y-8">
               {/* List of Posts */}
-              <div className="bg-white rounded-[32px] border border-slate-200/60 shadow-md p-6 md:p-10">
+              <div className="bg-transparent rounded-none border-0 shadow-none p-0 md:bg-white md:rounded-[32px] md:border md:border-slate-200/60 md:shadow-md md:p-10">
               <div className="space-y-2 mb-6 border-b border-slate-100 pb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-bold text-[#002147] flex items-center gap-2">
@@ -160,7 +160,7 @@ export default function Community() {
                         href={post.url}
                         target={post.internal ? undefined : '_blank'}
                         rel="noopener noreferrer"
-                        className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 -mx-3 md:-mx-5 rounded-2xl hover:bg-slate-50/80 transition-all text-left"
+                        className="group flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 py-5 mx-0 md:p-5 md:-mx-5 rounded-2xl hover:bg-slate-50/80 transition-all text-left"
                       >
                         <div className="space-y-2.5 flex-1 min-w-0">
                           <div className="flex flex-wrap gap-2 items-center">
