@@ -1,13 +1,16 @@
 {
-  "registrationEnabled": false,
+  "registrationEnabled": true,
   "time": "08:00~10:00",
   "date": "2026-11-07",
   "location": "한국시니어교류협회 (신촌로 220-1 / 황금바늘 : 이대역 100m)",
   "registrationYear": "2026",
   "title": "김형환 교수 \"1인기업 시대로의 변화, 역발상적 경영리더십 분석\"",
+  "rsvps": [
+    "회원 / 추천 동반인 / 일반인"
+  ],
   "id": "37",
   "registrationEventId": "2026-forum-37",
   "description": "1인 기업을 생각하는 모든 이들을 위한, 가장 친절한 안내자! 김형환 교수와 직접 만나세요",
-  "registrationForm": "",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLScUgfDkV75Yieb4cE8Hjo2tOYG1R7NlT3tSeWVPU0m67aZlhg/viewform?usp=pp_url&entry.1595475634=2026.11.07+%7C+%EC%A0%95%EA%B8%B0+%ED%8F%AC%EB%9F%BC+%7C+%22%EA%B9%80%ED%98%95%ED%99%98+%EA%B5%90%EC%88%98+%5C%221%EC%9D%B8%EA%B8%B0%EC%97%85+%EC%8B%9C%EB%8C%80%EB%A1%9C%EC%9D%98+%EB%B3%80%ED%99%94,+%EC%97%AD%EB%B0%9C%EC%83%81%EC%A0%81+%EA%B2%BD%EC%98%81%EB%A6%AC%EB%8D%94%EC%8B%AD+%EB%B6%84%EC%84%9D%5C%22%22",
   "category": "forum"
 }
