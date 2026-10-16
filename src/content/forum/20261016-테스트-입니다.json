@@ -1,0 +1,16 @@
+{
+  "category": "forum",
+  "categoryName": "비즈니스 포럼",
+  "name": "테스트 입니다",
+  "date": "2026.10.16",
+  "specialty": "운영자",
+  "desc": "목록에 표시할 소개...이건 밖에 걸리는거겠죠 아마도",
+  "image": "/media/upload_test_hi.webp",
+  "contentBlocks": [
+    {
+      "type": "text",
+      "align": "center",
+      "text": "안녕하세요 \n테스트 게시글입니다\n여러분들은 여기서 글을 작성하게 되실거에요"
+    }
+  ]
+}
