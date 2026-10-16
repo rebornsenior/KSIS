@@ -143,7 +143,7 @@ function ExpertCard({ exp, categories, setSelectedExpert }: ExpertCardProps) {
             {exp.categoryName}
           </span>
         </div>
-        {postDate(exp.date) && <time dateTime={postDate(exp.date).replaceAll('.','-')} className="block text-xs text-slate-400 mb-2">{postDate(exp.date)}</time>}
+        {postDate(exp.date) && <time dateTime={postDate(exp.date).replaceAll('.','-')} className="block text-base text-slate-400 mb-2">{postDate(exp.date)}</time>}
         <h3 
           className="text-xl font-bold mb-2 leading-normal break-keep transition-colors duration-300"
           style={{ color: isHovered ? iconColor : '#002147' }}
@@ -708,7 +708,7 @@ export default function ProjectComponent({
                     <div className="flex items-center gap-1.5 pt-1 text-[11px] text-slate-400 font-medium font-sans">
                       <span>{exp.specialty}</span>
                       <span>•</span>
-                      <span>{postDate(exp.date)}</span>
+                      <span className="text-base">{postDate(exp.date)}</span>
                     </div>
                   </div>
 

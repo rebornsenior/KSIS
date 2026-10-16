@@ -65,7 +65,7 @@ function ForumCard({ forum, categories, setSelectedForum }: ForumCardProps) {
       <div className="flex-1 p-6 md:p-7.5 flex flex-col justify-between min-w-0">
         <div className="space-y-3.5">
           <div className="flex items-center justify-end">
-            <span className="text-[11px] text-slate-400 font-bold font-mono">
+            <span className="text-base text-slate-400 font-bold font-mono">
               {forum.date || '2026.06.20'}
             </span>
           </div>
