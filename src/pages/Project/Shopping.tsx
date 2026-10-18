@@ -46,10 +46,17 @@ export default function ShoppingComponent() {
                 
                 {/* 1. Image Area (Occupies Left Column on PC) */}
                 <div className="w-full lg:w-[45%] h-64 sm:h-80 lg:h-auto relative overflow-hidden bg-slate-100 shrink-0">
+                  <img
+                    src={com.image}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110"
+                    referrerPolicy="no-referrer"
+                  />
                   <img 
                     src={com.image} 
                     alt={com.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-105"
+                    className="absolute inset-0 w-full h-full object-contain"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent lg:hidden" />
@@ -70,11 +77,11 @@ export default function ShoppingComponent() {
                       </p>
                     </div>
                     {com.logo && (
-                      <div className="w-12 h-12 shrink-0 rounded-xl overflow-hidden bg-white/95 flex items-center justify-center p-1.5">
+                      <div className="shrink-0 flex items-center justify-center">
                         <img 
                           src={com.logo} 
                           alt={`${com.name} 로고`}
-                          className="w-full h-full object-contain"
+                          className="w-auto h-9 max-w-[120px] object-contain"
                           referrerPolicy="no-referrer"
                         />
                       </div>
@@ -109,11 +116,11 @@ export default function ShoppingComponent() {
                         </div>
                       </div>
                       {com.logo && (
-                        <div className="w-[58px] h-[58px] shrink-0 rounded-2xl overflow-hidden bg-white flex items-center justify-center p-1">
+                        <div className="shrink-0 flex items-center justify-center">
                           <img 
                             src={com.logo} 
                             alt={`${com.name} 로고`} 
-                            className="w-full h-full object-contain"
+                            className="w-auto h-[50px] max-w-[180px] object-contain"
                             referrerPolicy="no-referrer"
                           />
                         </div>
