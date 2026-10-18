@@ -21,9 +21,9 @@ test('other origins cannot start authentication or load Google scripts',async()=
 const js=ts.transpileModule(readFileSync(new URL('src/registration-link.ts',root),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;
 const {registrationLink}=await import('data:text/javascript,'+encodeURIComponent(js));
 const form='https://docs.google.com/forms/d/e/test/viewform?entry.1=event';
-test('calendar application link chooses the connected form and preserves old events',()=>{
+test('calendar application link uses only the enabled form, never the related link',()=>{
   assert.equal(registrationLink({registrationEnabled:true,registrationForm:form,link:'https://cafe.naver.com/old'}),form);
-  assert.equal(registrationLink({link:'https://cafe.naver.com/old'}),'https://cafe.naver.com/old');
+  assert.equal(registrationLink({link:'https://cafe.naver.com/old'}),undefined);
   assert.equal(registrationLink({registrationEnabled:false,registrationForm:form}),undefined);
 });
 test('enabled events fail closed when the application form URL is missing or untrusted',()=>{

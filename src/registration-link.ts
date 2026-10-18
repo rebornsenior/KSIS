@@ -1,6 +1,6 @@
 import type { CalendarEvent } from './types';
 
-// Keep existing calendar presentation; only resolve its application destination.
+// Application links only use enabled Google Forms; related information is separate.
 export function registrationLink(event: Pick<CalendarEvent, 'registrationEnabled' | 'registrationForm' | 'link'>): string | undefined {
   if (event.registrationEnabled === true) {
     try {
@@ -9,5 +9,5 @@ export function registrationLink(event: Pick<CalendarEvent, 'registrationEnabled
     } catch {}
     return undefined;
   }
-  return event.link;
+  return undefined;
 }

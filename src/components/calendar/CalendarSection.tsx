@@ -489,9 +489,27 @@ export default function CalendarSection({ forceGridView = false }: CalendarSecti
                       바로가기 ↗
                     </a>
                   ) : (
+                    <span className="text-white/40 italic">{selectedEvent.registrationEnabled ? '준비 중' : '신청을 받지 않습니다'}</span>
+                  )}
+                </div>
+                  {selectedEvent.link && (
+<div className="flex items-center gap-2 pt-1">
+                  <Compass size={13} className="text-emerald-400 flex-none" />
+                  <span className="font-extrabold text-white shrink-0">관련 안내 :</span>
+                  {selectedEvent.link ? (
+                    <a
+                      href={selectedEvent.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-300 hover:text-emerald-400 underline font-bold"
+                    >
+                      자세한 안내 보기 ↗
+                    </a>
+                  ) : (
                     <span className="text-white/40 italic">준비 중</span>
                   )}
                 </div>
+                  )}
               </div>
 
             </div>
@@ -606,9 +624,27 @@ export default function CalendarSection({ forceGridView = false }: CalendarSecti
                               바로가기 ↗
                             </a>
                           ) : (
+                            <span className="text-slate-400 italic">{ev.registrationEnabled ? '준비 중' : '신청을 받지 않습니다'}</span>
+                          )}
+                        </div>
+                  {ev.link && (
+<div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                          <Compass size={12} className="text-[#0d34a6]" />
+                          <span>관련 안내: </span>
+                          {ev.link ? (
+                            <a
+                              href={ev.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#0d34a6] hover:underline font-extrabold"
+                            >
+                              자세한 안내 보기 ↗
+                            </a>
+                          ) : (
                             <span className="text-slate-400 italic">준비 중</span>
                           )}
                         </div>
+                  )}
                       </div>
 
                       {/* Attendees List */}
@@ -790,9 +826,27 @@ export default function CalendarSection({ forceGridView = false }: CalendarSecti
                         바로가기 ↗
                       </a>
                     ) : (
+                      <span className="text-slate-400 italic">{selectedEvent.registrationEnabled ? '준비 중' : '신청을 받지 않습니다'}</span>
+                    )}
+                  </div>
+                  {selectedEvent.link && (
+<div className="flex items-center gap-1.5 text-slate-800 font-bold">
+                    <Compass size={12} className="text-[#0d34a6]" />
+                    <span>관련 안내: </span>
+                    {selectedEvent.link ? (
+                      <a
+                        href={selectedEvent.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#0d34a6] hover:underline font-extrabold"
+                      >
+                        자세한 안내 보기 ↗
+                      </a>
+                    ) : (
                       <span className="text-slate-400 italic">준비 중</span>
                     )}
                   </div>
+                  )}
                 </div>
               </div>
             ) : (

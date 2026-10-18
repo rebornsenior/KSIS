@@ -2,27 +2,14 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
 import { Store, ArrowUpRight, User, Tag, Globe, ExternalLink } from 'lucide-react';
-import callimHero from '../../images/project/shopping-mall/callim.webp';
-import callimLogo from '../../images/project/shopping-mall/callim_logo.png';
+import { loadPosts } from '../../content/load';
 
 export default function ShoppingComponent() {
-  const companies = [
-    {
-      id: 1,
-      name: '주식회사 캘리엠',
-      representative: '박서영 대표자 / 회원님',
-      category: 'all',
-      categoryName: '기타소품 / 디자인',
-      tagline: '일상의 작은 순간에 특별한 가치를 더하는 감성 디자인 기업, 캘리엠(Calli-M)입니다.',
-      descParagraphs: [
-        `캘리엠(Calli-M)은 감성 디자인 콘텐츠를 기반으로 문구, 굿즈, 관광기념품을 기획·제작하는 디자인 전문기업입니다. 'Little Things, More Precious'라는 brand 철학 아래, 일상의 작은 경험과 이야기를 상품과 콘텐츠로 재해석하여 새로운 가치를 만들어가고 있습니다.`,
-        `자체 브랜드 상품 개발은 물론 기업·기관의 브랜드 굿즈, 홍보물, 관광상품 개발 등 다양한 프로젝트를 수행하고 있으며, 디자인을 통해 사람과 지역, 그리고 비즈니스를 연결하는 역할을 지향합니다.`
-      ],
-      image: callimHero,
-      logo: callimLogo,
-      link: 'https://calli-m.com'
-    }
-  ];
+  const companies = loadPosts('shopping').map(company => ({
+    ...company,
+    categoryName: company.categoryName || 'KSIS 정회원사',
+    descParagraphs: String(company.description || '').split(/\n\s*\n/).filter(Boolean),
+  }));
 
   const handleOpenStore = (url: string) => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -103,7 +90,7 @@ export default function ShoppingComponent() {
                     <div className="hidden lg:flex items-center justify-between">
                       <span className="text-xs font-black tracking-widest text-amber-600 uppercase flex items-center gap-1.5">
                         <Tag className="w-3.5 h-3.5" />
-                        주요 기업 동정 및 정보
+                        {(com.tags || []).map((tag: string) => `#${tag}`).join(' ')}
                       </span>
                       <span className="text-sm font-semibold text-slate-400 font-sans flex items-center gap-1">
                         KSIS 정회원사

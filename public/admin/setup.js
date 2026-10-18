@@ -24,6 +24,34 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
   });
   CMS.registerWidget('alignment', AlignmentControl);
+  const CompanyTagsControl = window.createClass({
+    tags() { return this.props.value?.toJS ? this.props.value.toJS() : (this.props.value || []); },
+    addTag() {
+      const tags = this.tags();
+      if (tags.length >= 4) {
+        window.alert('해시태그는 최대 4개까지 추가할 수 있습니다. 기존 태그를 삭제한 뒤 추가해 주세요.');
+        return;
+      }
+      this.props.onChange([...tags, '']);
+    },
+    isValid() {
+      const tags = this.tags();
+      return tags.length <= 4 && tags.every(tag => /^(?=.{1,10}$)[^#\s](?:[^#\r\n]*[^#\s])?$/.test(tag))
+        ? true : '해시태그는 최대 4개, 각 공백 포함 1~10자로 입력하세요. #과 앞뒤 공백은 제외해 주세요.';
+    },
+    render() {
+      const h = window.h, tags = this.tags();
+      return h('div', {},
+        ...tags.map((tag, index) => h('div', {key:index, style:{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}},
+          h('input', {type:'text', value:tag, maxLength:10, placeholder:'예: 따뜻한 그림', 'aria-label':`${index + 1}번 해시태그`,
+            style:{border:'1px solid #cbd5e1',borderRadius:'4px',background:'#f8fafc',color:'#1e293b',padding:'10px 12px',fontSize:'14px',width:'100%',minWidth:0,boxSizing:'border-box'},
+            onChange:event => this.props.onChange(tags.map((value, i) => i === index ? event.target.value : value))}),
+          h('button', {type:'button', 'aria-label':`${index + 1}번 해시태그 삭제`,
+            onClick:() => this.props.onChange(tags.filter((_, i) => i !== index))}, '삭제'))),
+        h('button', {type:'button', onClick:() => this.addTag()}, '태그 추가'));
+    },
+  });
+  CMS.registerWidget('company-tags', CompanyTagsControl);
   // Album picker uses its own media control identity so a native multi-selection
   // is consumed once and preserves the existing object/caption data format.
   const AlbumPhotosControl=window.createClass({
@@ -166,7 +194,15 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(group==='insights' && (data.tags || []).some(tag=>Array.from(tag).length>15)) message='해시태그는 하나당 15자 이내로 입력해 주세요.';
     if(message){window.alert(message);throw new Error(message);}
     if(!localMode) await window.KSISContentGuard.check({entry});
-    return syncCalendarRegistration(entry);
+    const result = await syncCalendarRegistration(entry);
+    if (group === 'calendar') return result;
+    let user = null;
+    try { user = JSON.parse(localStorage.getItem('decap-cms-user') || 'null'); } catch {}
+    const author = user?.name || user?.login || user?.email || (localMode ? '로컬 관리자' : '작성자 미상');
+    const now = new Date().toISOString();
+    return result.set('cmsCreatedAt', result.get('cmsCreatedAt') || now)
+      .set('cmsUpdatedAt', now).set('cmsAuthor', result.get('cmsAuthor') || author)
+      .set('cmsEditor', author);
   };
   CMS.registerEventListener({name:'preSave',handler:boardValidation});
   CMS.registerEventListener({name:'prePublish',handler:boardValidation});
@@ -245,6 +281,21 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
           ? {...t, fields: [{label:'표시 방식', name:'layout', widget:'hidden', default:'slider'}, ...t.fields.slice(1)]} : t)},
       ],
     })), {
+      name:'shopping', label:'쇼핑몰', folder:'src/content/shopping',
+      create:true, format:'json', identifier_field:'name', slug:'{{slug}}', editor:{preview:false},
+      description:'기업을 추가하면 PROJECT 쇼핑몰 목록에 표시됩니다. 회사 설명은 빈 줄로 문단을 나눌 수 있습니다.',
+      fields:[
+        {label:'회사명',name:'name',widget:'string'},
+        {label:'대표명',name:'representative',widget:'string'},
+        {label:'짧은 한줄 소개',name:'tagline',widget:'string'},
+        {label:'해시태그',name:'tags',widget:'company-tags',required:false,hint:'최대 4개 · 각 10자 이내(공백 포함). # 없이 하나씩 입력하세요. 홈페이지에서 #이 자동으로 붙습니다.'},
+        {label:'회사 설명',name:'description',widget:'text',hint:'문단 사이에 빈 줄을 넣으면 홈페이지에서도 문단이 나뉩니다.'},
+        {label:'회사 링크',name:'link',widget:'string',pattern:['^https?://[^\\s]+$','http:// 또는 https:// 주소를 입력해 주세요.']},
+        {label:'회사 로고',name:'logo',widget:'image'},
+        {label:'회사 대표 이미지 · 왼쪽',name:'image',widget:'image',hint:'권장 비율 4:3 · 권장 크기 1200×900px 이상. 화면 크기에 따라 가장자리가 잘릴 수 있으니 주요 이미지와 문구는 중앙에 배치해 주세요.'},
+        {name:'categoryName',widget:'hidden',required:false,default:'KSIS 정회원사'},
+      ],
+    }, {
       name:'calendar', label:'협회 일정', folder:'src/content/calendar',
       create:true, format:'json', identifier_field:'title',
       slug:'{{year}}{{month}}{{day}}-{{slug}}', editor:{preview:false},
@@ -267,9 +318,10 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       ],
     },
     {
-      name:'gallery',label:'BOARD · 활동 갤러리',folder:'src/content/gallery',create:true,format:'json',identifier_field:'title',slug:'{{year}}{{month}}{{day}}-{{slug}}',
+      name:'gallery',label:'활동 갤러리',folder:'src/content/gallery',create:true,format:'json',identifier_field:'title',slug:'{{year}}{{month}}{{day}}-{{slug}}',
       fields:[
         {label:'앨범 제목',name:'title',widget:'string'},
+        {label:'작성자',name:'author',widget:'string',pattern:['.*\\S.*','작성자 이름을 입력해 주세요.']},
         {label:'활동 날짜',name:'date',widget:'datetime',format:'YYYY-MM-DD',time_format:false},
         {label:'대표 사진',name:'image',widget:'image'},
         {label:'앨범 사진',name:'images',widget:'album-photos',media_library:{allow_multiple:true},required:true},
@@ -277,7 +329,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       ],
     },
     ...['notices','insights'].map(name=>({
-      name,label:name==='notices'?'BOARD · 공지사항':'BOARD · 인사이트',folder:'src/content/'+name,
+      name,label:name==='notices'?'공지사항':'인사이트',folder:'src/content/'+name,
       create:true,format:'json',identifier_field:'title',slug:'{{year}}{{month}}{{day}}-{{slug}}',
       ...(name==='insights'?{editor:{preview:false}}:{}),
       fields:[
@@ -303,7 +355,13 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         ]),
       ],
     })),
-    ],
+    ].map(collection => collection.name === 'calendar' ? collection : ({
+      ...collection,
+      summary: collection.name === 'shopping'
+        ? '{{name}} ⟦KSIS⟧ {{representative}}'
+        : '{{' + (collection.identifier_field || 'title') + '}} ⟦KSIS⟧ {{cmsUpdatedAt}} ⟦KSIS⟧ {{cmsAuthor}} ⟦KSIS⟧ {{date}} ⟦KSIS⟧ {{specialty}} ⟦KSIS⟧ {{author}}',
+      fields: [...collection.fields, ...['cmsCreatedAt','cmsUpdatedAt','cmsAuthor','cmsEditor'].map(name => ({name,widget:'hidden',required:false}))],
+    })),
   }});
   const SliderPreview = window.createClass({
     getInitialState() { return {index:0}; },
