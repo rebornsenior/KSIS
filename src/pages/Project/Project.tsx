@@ -1,3 +1,5 @@
+import {useNavigate} from 'react-router-dom';
+import {postPath} from '../../content/post-links';
 import PostSortControl from '../../components/PostSortControl';
 import {sortPosts,postDate,type PostSortOrder} from '../../content/sort-posts';
 import AuthorBadge from '../../components/AuthorBadge';
@@ -351,7 +353,13 @@ export default function ProjectComponent({
   const [internalCategory, setInternalCategory] = useState<string | null>(null);
   const selectedCategory = propCategory !== undefined ? propCategory : internalCategory;
   const setSelectedCategory = propSetSelectedCategory || setInternalCategory;
-  const [storedExpert, setSelectedExpert] = useState<any | null>(null);
+  const navigate=useNavigate();
+  const [storedExpert, storeExpert] = useState<any | null>(null);
+  const setSelectedExpert=(expert:any)=>{
+    if(!expert){storeExpert(null);return;}
+    const group=expert.category==='food'?'foodculture':expert.category==='book'?'bookclub':'local';
+    navigate(postPath(group,expert.slug));
+  };
   const selectedExpert = previewPost || storedExpert;
 
   const categories = [

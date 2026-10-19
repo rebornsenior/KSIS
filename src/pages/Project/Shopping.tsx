@@ -2,10 +2,11 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
 import { Store, ArrowUpRight, User, Tag, Globe, ExternalLink } from 'lucide-react';
+import { filterCompanies } from '../../content/company-filters';
 import { loadPosts } from '../../content/load';
 
-export default function ShoppingComponent() {
-  const companies = loadPosts('shopping').map(company => ({
+export default function ShoppingComponent({ category = '전체', query = '' }: { category?: string; query?: string } = {}) {
+  const companies = filterCompanies(loadPosts('shopping'), category, query).map(company => ({
     ...company,
     categoryName: company.categoryName || 'KSIS 정회원사',
     descParagraphs: String(company.description || '').split(/\n\s*\n/).filter(Boolean),
@@ -175,7 +176,7 @@ export default function ShoppingComponent() {
 
         {companies.length === 0 && (
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 text-slate-400">
-            해당 업종 카테고리의 기업 리스트가 존재하지 않습니다.
+            조건에 맞는 회원사가 없습니다. 다른 분류나 검색어를 선택해 주세요.
           </div>
         )}
       </div>

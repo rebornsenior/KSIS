@@ -281,11 +281,12 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
           ? {...t, fields: [{label:'표시 방식', name:'layout', widget:'hidden', default:'slider'}, ...t.fields.slice(1)]} : t)},
       ],
     })), {
-      name:'shopping', label:'쇼핑몰', folder:'src/content/shopping',
+      name:'shopping', label:'회원사 소개', folder:'src/content/shopping',
       create:true, format:'json', identifier_field:'name', slug:'{{slug}}', editor:{preview:false},
-      description:'기업을 추가하면 PROJECT 쇼핑몰 목록에 표시됩니다. 회사 설명은 빈 줄로 문단을 나눌 수 있습니다.',
+      description:'기업을 추가하면 PROJECT 회원사 소개 목록에 표시됩니다. 회사 설명은 빈 줄로 문단을 나눌 수 있습니다.',
       fields:[
         {label:'회사명',name:'name',widget:'string'},
+        {label:'업종 분류',name:'industry',widget:'select',options:['식품','제조','기타'],default:'기타',hint:'회원사 소개 페이지의 업종 필터에 사용됩니다.'},
         {label:'대표명',name:'representative',widget:'string'},
         {label:'짧은 한줄 소개',name:'tagline',widget:'string'},
         {label:'해시태그',name:'tags',widget:'company-tags',required:false,hint:'최대 4개 · 각 10자 이내(공백 포함). # 없이 하나씩 입력하세요. 홈페이지에서 #이 자동으로 붙습니다.'},

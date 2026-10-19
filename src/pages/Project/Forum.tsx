@@ -1,3 +1,5 @@
+import {useNavigate} from 'react-router-dom';
+import {postPath} from '../../content/post-links';
 import PostSortControl from '../../components/PostSortControl';
 import {sortPosts,postDate,type PostSortOrder} from '../../content/sort-posts';
 import AuthorBadge from '../../components/AuthorBadge';
@@ -118,6 +120,7 @@ function ForumCard({ forum, categories, setSelectedForum }: ForumCardProps) {
 }
 
 export default function ForumComponent({ previewPost }: { previewPost?: any } = {}) {
+  const navigate=useNavigate();
   const [sortOrder,setSortOrder]=useState<PostSortOrder>('newest');
   const [storedForum, setSelectedForum] = useState<any | null>(null);
   const selectedForum = previewPost || storedForum;
@@ -131,7 +134,7 @@ export default function ForumComponent({ previewPost }: { previewPost?: any } = 
   const filteredForums = sortPosts(forums,sortOrder);
 
   const handleSelectForum = (forum: any) => {
-    setSelectedForum(forum);
+    navigate(postPath('forum',forum.slug));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 

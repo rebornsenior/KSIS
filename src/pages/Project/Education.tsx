@@ -1,3 +1,5 @@
+import {useNavigate} from 'react-router-dom';
+import {postPath} from '../../content/post-links';
 import PostSortControl from '../../components/PostSortControl';
 import {sortPosts,postDate,type PostSortOrder} from '../../content/sort-posts';
 import AuthorBadge from '../../components/AuthorBadge';
@@ -104,6 +106,7 @@ function EducationCard({ clas, categories, setSelectedClass }: EducationCardProp
 }
 
 export default function EducationComponent({ previewPost }: { previewPost?: any } = {}) {
+  const navigate=useNavigate();
   const [sortOrder,setSortOrder]=useState<PostSortOrder>('newest');
   const [storedClass, setSelectedClass] = useState<any | null>(null);
   const selectedClass = previewPost || storedClass;
@@ -116,7 +119,7 @@ export default function EducationComponent({ previewPost }: { previewPost?: any 
   const classes = sortPosts(educationsData,sortOrder);
 
   const handleSelectClass = (clas: any) => {
-    setSelectedClass(clas);
+    navigate(postPath('education',clas.slug));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
