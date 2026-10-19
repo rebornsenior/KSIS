@@ -1,5 +1,5 @@
 {
-  "cmsUpdatedAt": "2026-10-19T01:45:56.856Z",
+  "cmsUpdatedAt": "2026-10-19T01:51:38.854Z",
   "categoryName": "비즈니스 포럼",
   "name": "캘리엠  세미나",
   "date": "2026.10.19",
@@ -12,6 +12,10 @@
   "category": "forum",
   "contentBlocks": [
     {
+      "type": "image",
+      "src": "/media/내부-이미지2.jpg"
+    },
+    {
       "type": "text",
       "text": "서른 여섯 번을 이어온 한국시니어교류협회의 비즈니스교류회가 오는 11월 7일,\n37회를 맞이합니다.\n이번에 모실 강연자는 김형환 교수입니다.\nAI가 모든 일을 대체하는 시대. AI가 기존의 일자리를 대체하고, 신입의 일자를 막는 시대.\n김형환 교수는 자신 안에서 기업을 찾으라고 말해온 사람입니다.\n지난 20년간, 5천여 명의 평범한 직장인, 주부, 학생들을 1인기업가로 변신시켜온 코치입니다.\n그는 다르게 말합니다.\n\"자신의 철학과 주제가 그 어떤 비즈니스의 형식과 기법보다 먼저\"라고 말합니다.\n왜 창업에 경영과 기술이 아니라 자기정체성과 철학일까? 그 궁금증을 풀어보는 시간!!\n주인공의 목소리를 직접 듣습니다.",
       "align": "left"
@@ -22,15 +26,13 @@
     },
     {
       "type": "link",
-      "url": "https://docs.google.com/forms/d/e/1FAIpQLSdpQcsAwknEJ8NVsBmmjgR-tfLyrhfOMy_hXSg9z8hOZ_SHyw/viewform"
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSdpQcsAwknEJ8NVsBmmjgR-tfLyrhfOMy_hXSg9z8hOZ_SHyw/viewform",
+      "text": "구글 신청폼 바로가기"
     },
     {
       "type": "quote",
-      "text": "행사 안내\n* 일시: 2026년 11월 7일(토) 오전 8:00 ~ 10:00\n* 장소: 한국시니어교류협회 사무실(마포구 신촌로 200-1)\n황금바늘빌딩 2층, 이대역에서 100m)\n* 대상: 한국시니어교류협회 회원 및 추천 동반인, 일반인"
-    },
-    {
-      "type": "image",
-      "src": "/media/내부-이미지2.jpg"
+      "text": "행사 안내\n* 일시: 2026년 11월 7일(토) 오전 8:00 ~ 10:00\n* 장소: 한국시니어교류협회 사무실(마포구 신촌로 200-1)\n황금바늘빌딩 2층, 이대역에서 100m)\n* 대상: 한국시니어교류협회 회원 및 추천 동반인, 일반인",
+      "align": "center"
     },
     {
       "type": "gallery",
