@@ -1,14 +1,14 @@
 {
-  "cmsUpdatedAt": "2026-10-19T00:23:03.763Z",
+  "cmsUpdatedAt": "2026-10-19T00:43:31.261Z",
   "categoryName": "비즈니스 포럼",
-  "name": "ㄴㄴ",
+  "name": "테스트",
   "date": "2026.10.19",
-  "desc": "ㄴㄴ",
+  "desc": "테스트",
   "cmsCreatedAt": "2026-10-19T00:23:03.763Z",
   "cmsAuthor": "rebornsenior",
   "cmsEditor": "rebornsenior",
-  "image": "/media/upload_test_hi.webp",
-  "specialty": "ㄴㄴ",
+  "image": "/media/내부-이미지3.jpg",
+  "specialty": "테스트",
   "category": "forum",
   "contentBlocks": [
     {
