@@ -2,13 +2,13 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
 import { Store, ArrowUpRight, User, Tag, Globe, ExternalLink } from 'lucide-react';
-import { filterCompanies } from '../../content/company-filters';
+import { filterCompanies, companyFilters } from '../../content/company-filters';
 import { loadPosts } from '../../content/load';
 
 export default function ShoppingComponent({ category = '전체', query = '' }: { category?: string; query?: string } = {}) {
   const companies = filterCompanies(loadPosts('shopping'), category, query).map(company => ({
     ...company,
-    categoryName: company.categoryName || 'KSIS 정회원사',
+    categoryName: companyFilters.categories.find(category => category.id === (company.industry || '기타'))?.label || '미분류',
     descParagraphs: String(company.description || '').split(/\n\s*\n/).filter(Boolean),
   }));
 
