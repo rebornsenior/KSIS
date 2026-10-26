@@ -1,0 +1,16 @@
+{
+  "registrationEnabled": true,
+  "time": "18:49-18:50",
+  "date": "2026-10-26",
+  "location": "테스트",
+  "registrationYear": "2026",
+  "title": "테스트",
+  "rsvps": [
+    "운영진"
+  ],
+  "link": "https://www.rebornsenior.com/",
+  "registrationEventId": "evt-773e98ec-8b4f-4896-82f1-ba0a0c582a92",
+  "description": "테스트입니다",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLScUgfDkV75Yieb4cE8Hjo2tOYG1R7NlT3tSeWVPU0m67aZlhg/viewform?usp=pp_url&entry.1595475634=2026.10.26+%7C+%EC%A0%95%EA%B8%B0+%ED%8F%AC%EB%9F%BC+%7C+%22%ED%85%8C%EC%8A%A4%ED%8A%B8%22",
+  "category": "forum"
+}
