@@ -36,6 +36,55 @@
   }
   function render() {
     groupCollections();
+    // The settings collection remains available to Decap's relation field, but is managed from shopping.
+    for (const link of document.querySelectorAll('a[href]')) {
+      if (new URL(link.href, location.href).hash === '#/collections/member_filters') {
+        const row = link.closest('li') || link;
+        row.hidden = true;
+        row.style.display = 'none';
+      }
+    }
+    if (location.hash === '#/collections/member_filters' && window.top === window) {
+      location.replace('#/collections/shopping');
+      return;
+    }
+    if (location.hash === '#/collections/shopping') {
+      const heading = [...document.querySelectorAll('h1')].find(el => el.textContent.trim() === '회원사 소개');
+      if (heading && !document.querySelector('[data-member-filter-settings]')) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.memberFilterSettings = '';
+        button.textContent = '분류 관리';
+        button.style.cssText = 'display:inline-block;margin:12px 0;color:#2563eb;font-size:14px;border:0;background:transparent;cursor:pointer';
+        button.onclick = () => {
+          const dialog = document.createElement('dialog');
+          dialog.setAttribute('aria-label', '회원사 분류 관리');
+          dialog.style.cssText = 'width:min(1100px,94vw);height:88vh;max-height:94vh;padding:0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden';
+          const bar = document.createElement('div');
+          bar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid #e2e8f0;background:white';
+          const title = document.createElement('strong');
+          title.textContent = '분류 관리';
+          const close = document.createElement('button');
+          close.type = 'button';
+          close.textContent = '닫기';
+          close.style.cssText = 'padding:8px 16px;cursor:pointer';
+          close.onclick = () => dialog.close();
+          bar.append(title, close);
+          const frame = document.createElement('iframe');
+          frame.title = '회원사 분류 편집';
+          const url = new URL(location.href);
+          url.searchParams.set('memberFilterEditor', '1');
+          url.hash = '#/collections/member_filters/entries/filters';
+          frame.src = url.href;
+          frame.style.cssText = 'width:100%;height:calc(100% - 65px);border:0';
+          dialog.append(bar, frame);
+          dialog.addEventListener('close', () => { dialog.remove(); location.reload(); });
+          document.body.append(dialog);
+          dialog.showModal();
+        };
+        heading.after(button);
+      }
+    }
     const match = location.hash.match(/^#\/collections\/([^/?]+)\/?(?:\?.*)?$/);
     if (!match || match[1] === 'calendar') return;
     const prefix = '#/collections/' + match[1] + '/entries/';

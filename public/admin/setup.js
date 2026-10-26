@@ -52,6 +52,23 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
   });
   CMS.registerWidget('company-tags', CompanyTagsControl);
+  const MemberCategoriesControl = window.createClass({
+    items() { const value=this.props.value; return value?.toJS ? value.toJS() : (value || []); },
+    render() {
+      const h=window.h, items=this.items();
+      const update=next=>this.props.onChange(next);
+      return h('div', {},
+        ...items.map((item,index)=>h('div',{key:item.id,style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px'}},
+          h('input',{type:'text',value:item.label || '',placeholder:'분류명 입력','aria-label':(index+1)+'번 분류명',
+            onChange:event=>update(items.map((row,i)=>i===index ? {...row,label:event.target.value} : row)),
+            style:{flex:1,minWidth:0,padding:'12px',border:'1px solid #cbd5e1',borderRadius:'4px'}}),
+          h('button',{type:'button','aria-label':(index+1)+'번 분류 삭제',onClick:()=>update(items.filter((_,i)=>i!==index)),style:{padding:'10px',cursor:'pointer'}},'삭제'))),
+        h('button',{type:'button',disabled:items.length>=6,onClick:()=>update([...items,{id:'industry-'+crypto.randomUUID(),label:''}]),style:{padding:'10px 16px',cursor:'pointer'}},'분류 추가'),
+        h('p',{style:{color:'#64748b',fontSize:'12px',marginTop:'8px'}},'최대 6개 · '+items.length+'/6 · 빈칸은 채우거나 삭제해 주세요.')
+      );
+    }
+  });
+  CMS.registerWidget('member-categories', MemberCategoriesControl);
   // Album picker uses its own media control identity so a native multi-selection
   // is consumed once and preserves the existing object/caption data format.
   const AlbumPhotosControl=window.createClass({
@@ -193,6 +210,19 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(group==='insights' && (data.tags?.length || 0)>5) message='해시태그는 최대 5개입니다.';
     if(group==='insights' && (data.tags || []).some(tag=>Array.from(tag).length>15)) message='해시태그는 하나당 15자 이내로 입력해 주세요.';
     if(message){window.alert(message);throw new Error(message);}
+    if(group === 'member_filters') {
+      const categories = data.categories || [];
+      const ids = categories.map(item => String(item.id || '').trim());
+      const names = categories.map(item => String(item.label || '').normalize('NFKC').trim().replace(/\s+/g, '').toLocaleLowerCase());
+      if(categories.length > 6 || names.some(name => !name) || new Set(names).size !== names.length || names.includes(String(data.allLabel || '').normalize('NFKC').trim().replace(/\s+/g, '').toLocaleLowerCase())) {
+        const message = categories.length > 6 ? '업종 분류는 최대 6개까지 등록할 수 있습니다.' : names.some(name => !name) ? '분류명을 입력하거나 해당 줄을 삭제해 주세요.' : '분류명이 중복됩니다. 전체 보기 문구와 다른 이름을 입력해 주세요.';
+        window.alert(message); throw new Error(message);
+      }
+      if(ids.some(id => !id || id === '전체') || new Set(ids).size !== ids.length || categories.some(item => !String(item.label || '').trim())) {
+        throw new Error('분류 정보를 확인해 주세요. 새로 추가한 줄을 삭제하고 다시 추가해 주세요.');
+      }
+      return entry.get('data');
+    }
     if(!localMode) await window.KSISContentGuard.check({entry});
     const result = await syncCalendarRegistration(entry);
     if (group === 'calendar') return result;
@@ -264,7 +294,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     },
     ...(localMode ? {local_backend:{url:'http://127.0.0.1:8081/api/v1'}} : {publish_mode:'editorial_workflow'}),
     media_folder: 'public/media', public_folder: '/media',
-    collections: [...menus.map(([name, label]) => ({
+    collections: [{name:'member_filters',label:'회원사 분류 관리',editor:{preview:false},files:[{name:'filters',label:'분류 관리',file:'src/content/settings/member-filters.json',fields:[{label:'전체 보기 문구',name:'allLabel',widget:'string'},{label:'업종 분류',name:'categories',widget:'member-categories',required:false}]}]}, ...menus.map(([name, label]) => ({
       name, label, folder: `src/content/${name}`, create: true, format: 'json',
       identifier_field: 'name', slug: '{{year}}{{month}}{{day}}-{{slug}}',
       description: localMode ? '로컬 파일 저장 모드입니다. 이 컴퓨터의 글·사진 파일에만 저장하며 GitHub 전송과 공개 배포는 하지 않습니다.' : '초안 저장과 공개 게시를 구분합니다. 공개 게시 후 배포 완료까지 기다려 주세요.',
@@ -286,7 +316,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       description:'기업을 추가하면 PROJECT 회원사 소개 목록에 표시됩니다. 회사 설명은 빈 줄로 문단을 나눌 수 있습니다.',
       fields:[
         {label:'회사명',name:'name',widget:'string'},
-        {label:'업종 분류',name:'industry',widget:'select',options:['식품','제조','기타'],default:'기타',hint:'회원사 소개 페이지의 업종 필터에 사용됩니다.'},
+        {label:'업종 분류',name:'industry',widget:'relation',collection:'member_filters',file:'filters',search_fields:['categories.*.label'],value_field:'categories.*.id',display_fields:['categories.*.label'],hint:'회원사 소개 페이지의 업종 필터에 사용됩니다.'},
         {label:'대표명',name:'representative',widget:'string'},
         {label:'짧은 한줄 소개',name:'tagline',widget:'string'},
         {label:'해시태그',name:'tags',widget:'company-tags',required:false,hint:'최대 4개 · 각 10자 이내(공백 포함). # 없이 하나씩 입력하세요. 홈페이지에서 #이 자동으로 붙습니다.'},
@@ -356,7 +386,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         ]),
       ],
     })),
-    ].map(collection => collection.name === 'calendar' ? collection : ({
+    ].map(collection => (collection.name === 'calendar' || collection.files) ? collection : ({
       ...collection,
       summary: collection.name === 'shopping'
         ? '{{name}} ⟦KSIS⟧ {{representative}}'

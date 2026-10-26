@@ -1,9 +1,10 @@
+import { companyFilters } from '../content/company-filters';
 import {postTab} from '../content/post-links';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../constants';
-import { Landmark, Users, Store, GraduationCap, Soup, BookOpen, Compass } from 'lucide-react';
+import { Landmark, Users, Store, GraduationCap, Soup, BookOpen, Compass, Search } from 'lucide-react';
 
 // Import the subcomponents representing the 4 modular program areas
 import ForumComponent from './Project/Forum';
@@ -129,17 +130,20 @@ export default function Archive({postGroup,post}: {postGroup?:string;post?:any} 
           {currentTab === 'shopping' && (
             <div className="flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-8">
               <nav aria-label="회원사 업종 필터" className="flex items-center gap-7">
-                {['전체', '식품', '제조', '기타'].map(category => (
+                {[{id:'전체',label:companyFilters.allLabel}, ...companyFilters.categories].map(({id:category,label}) => (
                   <button key={category} type="button" aria-pressed={companyCategory === category}
                     onClick={() => setCompanyCategory(category)}
                     className={'text-sm py-2 border-b-2 transition-colors ' + (companyCategory === category ? 'font-bold text-[#002147] border-[#002147]' : 'text-slate-500 border-transparent hover:text-[#002147]')}>
-                    {category}
+                    {label}
                   </button>
                 ))}
               </nav>
+              <div className="relative w-full sm:w-80">
               <input type="search" aria-label="회원사 검색" placeholder="회원사명 · 대표명 · 키워드 검색"
                 value={companyQuery} onChange={event => setCompanyQuery(event.target.value)}
-                className="w-full sm:w-80 border-b border-slate-300 bg-transparent py-2 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#002147]" />
+                className="w-full border-b border-slate-300 bg-transparent py-2 pr-9 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-[#002147]" />
+              <Search aria-hidden="true" className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              </div>
             </div>
           )}
           {/* Master 4-Tab Switcher removed as we now use a dedicated visual Portal page inside Project Component */}

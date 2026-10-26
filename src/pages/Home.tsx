@@ -1,3 +1,4 @@
+import MemberCompaniesSection from '../components/MemberCompaniesSection';
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ChevronRight, ChevronLeft, Archive, Users, BarChart3, ArrowUpRight, Handshake, ChartNoAxesCombined, UsersRound, FileText, ClipboardList, ExternalLink } from 'lucide-react';
@@ -90,13 +91,6 @@ const programs = [
     title: '식문화 / 북클럽 / 로컬탐방',
     description: '관심사 기반의 소모임 활동을 통해 자연스러운 관계 형성과 비즈니스 교류의 기회를 만듭니다.',
     category: 'Project'
-  },
-  {
-    id: 3,
-    name: '회원사 소개',
-    title: '커머스 구축 / 상생 협력 / 수익화 지원',
-    description: <>회원사의 다양한 브랜드와<br />서비스를 소개합니다.<br />교류와 협력으로 기회를 넓히고<br />함께 성장합니다.</>,
-    category: 'Platform'
   },
   {
     id: 4,
@@ -416,7 +410,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {programs.map((program, i) => {
               const styles = [
                 {
@@ -438,13 +432,6 @@ export default function Home() {
                   textColor: 'text-white',
                   titleColor: 'text-white',
                   descColor: 'text-white',
-                  buttonClass: 'bg-white/10 hover:bg-white/20 text-white border-white/20'
-                },
-                {
-                  bgColor: 'bg-[#d2833d]',
-                  textColor: 'text-white',
-                  titleColor: 'text-white',
-                  descColor: 'text-white/85',
                   buttonClass: 'bg-white/10 hover:bg-white/20 text-white border-white/20'
                 },
               ];
@@ -481,8 +468,10 @@ export default function Home() {
         </div>
       </section>
 
+      <MemberCompaniesSection />
+
       {/* Calendar Section */}
-      <section className="pt-12 pb-24 md:py-24 px-6 md:px-12 lg:px-16 xl:px-20 bg-white">
+      <section className="pt-12 pb-24 md:py-24 px-6 md:px-12 lg:px-16 xl:px-20 border-t border-slate-200 bg-white">
         <div className="max-w-[1720px] mx-auto">
           <div className="mb-16 space-y-4">
             <h2 className="text-[15vw] md:text-[96px] text-[#002147] opacity-[0.10] md:opacity-10 md:pt-[20px] font-bold tracking-tight md:tracking-[-0.05em] whitespace-nowrap overflow-visible relative left-0 md:left-0 w-full md:w-auto text-center md:text-center mb-0">CALENDAR</h2>
