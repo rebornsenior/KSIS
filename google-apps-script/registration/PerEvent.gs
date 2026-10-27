@@ -35,7 +35,7 @@ function ksisSyncPerEvent_(request,email) {
     }
     if(!event || event.structure!=='per-event') {
       const archives=event ? [event] : [];
-      const form=FormApp.create(request.date+' '+request.title.trim()+' 참가 신청',false);
+      const form=FormApp.create(ksisFormTitle_(request.date,request.title),false);
       event={structure:'per-event',formId:form.getId(),archivedForms:archives,readers:access.readers || access.managers,deleters:access.deleters || access.managers,enabled:false,ready:false};
       store.setProperty(key,JSON.stringify(event));
     }
@@ -45,8 +45,8 @@ function ksisSyncPerEvent_(request,email) {
     const form=FormApp.openById(event.formId);
     const folder=ksisEventFolder_(store,year,month);
     file.moveTo(folder);
-    file.setName(request.date+' '+request.title.trim()+' 참가 신청');
-    form.setTitle(request.date+' '+request.title.trim()+' 참가 신청');
+    file.setName(ksisFormTitle_(request.date,request.title));
+    form.setTitle(ksisFormTitle_(request.date,request.title));
     const fields=[['eventItemId','참가할 행사','LIST'],['nameItemId','신청자 이름','TEXT'],['phoneItemId','전화번호','TEXT'],['payerItemId','입금자명','TEXT']];
     for(const [field,title,type] of fields) {
       if(event[field])continue;
@@ -71,6 +71,9 @@ function ksisSyncPerEvent_(request,email) {
     store.setProperty(key,JSON.stringify(event));
     return ksisEventInfo_(request.eventId,event,form);
   } finally {lock.releaseLock();}
+}
+function ksisFormTitle_(date,title) {
+  return date+' | '+JSON.stringify(String(title).trim())+' 참가신청';
 }
 function ksisEventFolder_(store,year,month) {
   const rootKey='KSIS_FORM_ROOT';
