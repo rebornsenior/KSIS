@@ -161,6 +161,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     items(){const value=this.props.value;return value?.toJS?value.toJS():(Array.isArray(value)?value:[]);},
     render(){
       const h=window.h, rows=this.items();
+      const validRows=rows.filter(row=>String(row.grade||'').trim() && String(row.amount||'').trim());
       const update=next=>this.props.onChange(next);
       return h('div',{},
         h('label',{style:{display:'flex',alignItems:'center',gap:'8px',fontWeight:600}},
@@ -511,6 +512,8 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       }));
   }
 }
+
+
 
 
 
