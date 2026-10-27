@@ -143,6 +143,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     getInitialState(){return {busy:false,message:'',error:false};},
     render(){
       const h=window.h, enabled=this.props.value===true;
+      const preview=enabled ? h('div',{style:{marginTop:'16px',display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(280px,1fr)',gap:'20px',alignItems:'start'}},h('div',{style:{padding:'16px',border:'1px solid #cbd5e1',borderRadius:'8px',background:'#fff'}},h('strong',{},'신청 항목 편집'),h('p',{style:{fontSize:'13px',color:'#64748b',lineHeight:1.5}},'신청 항목은 저장 시 행사 전용 Google Form에 반영됩니다.')),h('div',{style:{padding:'16px',border:'1px solid #cbd5e1',borderRadius:'8px',background:'#f8fafc'}},h('strong',{},'신청 폼 미리보기'),...['신청자 이름','전화번호','참가 여부'].map(label=>h('div',{key:label,style:{marginTop:'14px',padding:'12px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:'6px'}},label+' *',h('div',{style:{marginTop:'8px',color:'#94a3b8',fontSize:'13px'}},'내 답변'))))) : null;
       return h('div',{},
         h('button',{type:'button',role:'switch','aria-checked':enabled,disabled:this.state.busy,onClick:async()=>{
           if(enabled){this.props.onChange(false);this.setState({message:'저장·게시하면 이 행사 신청서가 구글 드라이브 휴지통으로 이동합니다.',error:false});return;}
@@ -152,10 +153,31 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
           finally{this.setState({busy:false});}
         },style:{padding:'12px 20px',border:'1px solid #002147',borderRadius:'6px',background:enabled?'#002147':'white',color:enabled?'white':'#002147',fontSize:'16px',fontWeight:700,cursor:'pointer'}},this.state.busy?'구글 연결 중…':enabled?'신청받기 켜짐':'신청받기 켜기'),
         h('p',{style:{fontSize:'16px',fontWeight:700,lineHeight:1.6,marginTop:'12px',color:'#002147'}},'신청받기를 켜고 구글 계정을 선택한 뒤 일정을 저장·게시하세요. 행사별 신청서가 연도·월 폴더에 자동 생성됩니다.'),
-        h('p',{'aria-live':'polite',role:this.state.error?'alert':'status',style:{color:this.state.error?'#b91c1c':'#334155'}},this.state.message));
+        h('p',{'aria-live':'polite',role:this.state.error?'alert':'status',style:{color:this.state.error?'#b91c1c':'#334155'}},this.state.message),preview);
     }
   });
   CMS.registerWidget('registration-enabled',RegistrationEnabledControl);
+  const ParticipationFeeControl = window.createClass({
+    items(){const value=this.props.value;return value?.toJS?value.toJS():(Array.isArray(value)?value:[]);},
+    render(){
+      const h=window.h, rows=this.items();
+      const update=next=>this.props.onChange(next);
+      return h('div',{},
+        h('label',{style:{display:'flex',alignItems:'center',gap:'8px',fontWeight:600}},
+          h('input',{type:'checkbox',checked:rows.length>0,onChange:e=>update(e.target.checked?(rows.length?rows:[{grade:'일반인',amount:'0'}]):[])}),
+          '참가비를 받는 행사'),
+        rows.length>0 && h('div',{style:{marginTop:'12px'}},rows.map((row,index)=>h('div',{key:index,style:{display:'flex',gap:'8px',marginBottom:'8px'}},
+          h('input',{type:'text',value:row.grade||'',placeholder:'회원 등급 또는 참가 유형',onChange:e=>update(rows.map((item,i)=>i===index?{...item,grade:e.target.value}:item)),style:{flex:1,padding:'10px'}}),
+          h('input',{type:'number',min:0,value:row.amount||'',placeholder:'금액(원)',onChange:e=>update(rows.map((item,i)=>i===index?{...item,amount:e.target.value}:item)),style:{width:'120px',padding:'10px'}}),
+          h('button',{type:'button',onClick:()=>update(rows.filter((_,i)=>i!==index))},'삭제')))),
+        rows.length>0 && h('button',{type:'button',onClick:()=>update([...rows,{grade:'',amount:''}])},'등급·참가 유형 추가'),
+        h('p',{style:{fontSize:'12px',color:'#64748b'}},rows.length?'신청자에게 선택한 유형과 입금 금액이 안내됩니다.':'참가비가 없는 행사는 신청만 받고 입금 안내를 표시하지 않습니다.'),
+        validRows.length>0 && h('div',{style:{marginTop:'12px',padding:'12px',border:'1px solid #e2e8f0',borderRadius:'6px',background:'#f8fafc'}},
+          h('strong',{},'신청자에게 표시될 참가비 안내'),
+          ...validRows.map((row,index)=>h('div',{key:index,style:{display:'flex',justifyContent:'space-between',marginTop:'8px'}},h('span',{},String(row.grade).trim()),h('span',{},Number(row.amount).toLocaleString('ko-KR')+'원')))));
+    }
+  });
+  CMS.registerWidget('participation-fee',ParticipationFeeControl);
   const RegistrationRosterControl = window.createClass({
     getInitialState() { return {open:false,connection:''}; },
 
@@ -205,7 +227,9 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     data=data.set('registrationEventId',eventId);
     if(!eventId || !title?.trim() || !date) throw new Error('신청 연결을 위해 일정 제목과 날짜를 입력해 주세요.');
     try {
-      const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',enabled});
+      const participationFee=data.get('participationFee');
+      const feeRows=participationFee?.toJS ? participationFee.toJS() : (Array.isArray(participationFee) ? participationFee : []);
+      const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',participationFee:feeRows,enabled});
       if(!enabled) {
         if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==3) throw new Error('INVALID_SYNC_RESULT');
         return data.set('registrationForm','').delete('registrationRefreshRequested');
@@ -232,6 +256,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(group==='insights' && (data.tags?.length || 0)>5) message='해시태그는 최대 5개입니다.';
     if(group==='insights' && (data.tags || []).some(tag=>Array.from(tag).length>15)) message='해시태그는 하나당 15자 이내로 입력해 주세요.';
     if(group==='calendar' && (!Array.isArray(data.rsvps) || !data.rsvps.length || data.rsvps.some(item=>typeof item!=='string' || !item.trim()))) message='참가 대상을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
+    if(group==='calendar' && Array.isArray(data.participationFee) && data.participationFee.some(item=>!String(item?.grade || '').trim() || !String(item?.amount ?? '').trim() || !Number.isFinite(Number(item.amount)) || Number(item.amount)<0)) message='참가비 등급과 금액을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
     if(message){window.alert(message);throw new Error(message);}
     if(group === 'member_filters') {
       const categories = data.categories || [];
@@ -364,6 +389,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'분류',name:'category',widget:'select',options:[{label:'정기 포럼',value:'forum'},{label:'교육 특강',value:'education'},{label:'수익 실무',value:'monetize'},{label:'친목 소모임',value:'other'}]},
         {label:'참가 대상',name:'rsvps',widget:'event-audience',required:true,hint:'참가 가능한 대상을 입력하세요. 예: 협회 회원, 일반 참가자'},
         {label:'참가 신청 접수',name:'registrationEnabled',widget:'registration-enabled',default:false,required:true},
+        {label:'참가비·회원 등급별 금액',name:'participationFee',widget:'participation-fee',required:false},
 
         {label:'참가 신청 폼 · 화면 미리보기',name:'registrationForm',widget:'registration-form',required:false},
         {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:false},
@@ -485,3 +511,6 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       }));
   }
 }
+
+
+

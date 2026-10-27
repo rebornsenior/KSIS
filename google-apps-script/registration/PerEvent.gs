@@ -56,21 +56,28 @@ function ksisSyncPerEvent_(request,email) {
       event[field]=String(item.getId());store.setProperty(key,JSON.stringify(event));
     }
     const category=request.category || event.category || 'other';
+    const feeRows=ksisNormalizeFees_(request.participationFee);
     const label=request.date.replace(/-/g,'.')+' | '+labels[category]+' | '+JSON.stringify(request.title.trim());
     event.previousValues=Array.from(new Set([...(event.previousValues || []),event.eventValue].filter(value=>value && value!==label)));
-    event.eventValue=label;event.year=year;event.month=month;event.date=request.date;event.title=request.title.trim();event.category=category;event.labelVersion=2;event.folderId=folder.getId();
+    event.eventValue=label;event.year=year;event.month=month;event.date=request.date;event.title=request.title.trim();event.category=category;event.participationFee=feeRows;event.labelVersion=2;event.folderId=folder.getId();
     store.setProperty(key,JSON.stringify(event));
     form.getItemById(Number(event.eventItemId)).asListItem().setChoiceValues([label]);
     for(const old of event.archivedForms || []) {
       if(old.enabled!==false){ksisRetireAnnual_(old,request.eventId,store);old.enabled=false;}
     }
-    form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.');
+    const feeText=feeRows.length ? '\n\n참가비 안내\n'+feeRows.map(row=>'- '+row.grade+': '+row.amount.toLocaleString('ko-KR')+'원').join('\n') : '\n\n참가비가 없는 행사입니다.';
+  form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.'+feeText);
     form.setCollectEmail(false);form.setLimitOneResponsePerUser(false);form.setPublishingSummary(false);
     form.setPublished(true);form.setAcceptingResponses(true);
     event.enabled=true;event.trashed=false;event.ready=true;
     store.setProperty(key,JSON.stringify(event));
     return ksisEventInfo_(request.eventId,event,form);
   } finally {lock.releaseLock();}
+}
+
+function ksisNormalizeFees_(value) {
+  if(!Array.isArray(value)) return [];
+  return value.map(row=>({grade:String(row && row.grade || '').trim(),amount:Number(row && row.amount)})).filter(row=>row.grade && Number.isFinite(row.amount) && row.amount>=0 && row.amount<=100000000).slice(0,20);
 }
 function ksisFormTitle_(date,title) {
   return date+' | '+JSON.stringify(String(title).trim())+' 참가신청';
@@ -110,3 +117,6 @@ function ksisRetireAnnual_(event,eventId,store) {
     if(registry){registry.inactiveValues=Array.from(new Set([...(registry.inactiveValues || []),...old]));store.setProperty(key,JSON.stringify(registry));}
   }
 }
+
+
+
