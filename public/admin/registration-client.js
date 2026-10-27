@@ -27,7 +27,7 @@ window.KSISRegistration = (() => {
       function finish(error) {if(finished)return;finished=true;clearTimeout(timer);error?reject(error):resolve();}
       const client=window.google.accounts.oauth2.initTokenClient({
         client_id:'192319107390-go7k54150oq8g3k2pr5v4enh7g4rfpms.apps.googleusercontent.com',
-        scope:'https://www.googleapis.com/auth/forms https://www.googleapis.com/auth/userinfo.email',
+        scope:'https://www.googleapis.com/auth/forms https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email',
         error_callback:error=>finish(new Error(error?.type==='popup_failed_to_open'?'POPUP_BLOCKED':'LOGIN_CANCELLED')),
         callback:token=>{
           if(finished) {token.access_token='';return;}
@@ -41,6 +41,10 @@ window.KSISRegistration = (() => {
     return pending;
   }
   async function call(request) {
+    if(request.action==='sync' && request.formStructure==='per-event') {
+      const capabilities=await call({action:'capabilities'});
+      if(capabilities?.schemaVersion!==3)throw new Error('REGISTRATION_CODE_OUTDATED');
+    }
     await authorize();
     const response=await fetch('https://script.googleapis.com/v1/scripts/AKfycbzY5SuG65FqgonF8sFzCGTvRyuuiU85hVjhM0uUShDvjWf50TejSzMtmYEWob3DxQBH7w:run',{
       method:'POST',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(90000),
@@ -51,7 +55,7 @@ window.KSISRegistration = (() => {
     if(!response.ok || result.error) {
       if(response.status===401) credential=null;
       const message=String(result.error?.details?.[0]?.errorMessage || result.error?.status || 'CONNECTION_FAILED');
-      const codes=['AUTOMATION_NOT_CONFIGURED','INVALID_ACTION','FORBIDDEN','EVENT_YEAR_CHANGED','EVENT_LABEL_CONFLICT','INVALID_EVENT_DATE','INVALID_EVENT_TITLE','INVALID_EVENT_CATEGORY','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND'];
+      const codes=['AUTOMATION_NOT_CONFIGURED','INVALID_ACTION','FORBIDDEN','EVENT_YEAR_CHANGED','EVENT_LABEL_CONFLICT','INVALID_EVENT_DATE','INVALID_EVENT_TITLE','INVALID_EVENT_CATEGORY','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','TRASH_NOT_CONFIRMED','FORM_FOLDER_TRASHED','REGISTRATION_CODE_OUTDATED'];
       throw new Error(codes.find(code=>message.includes(code)) || 'CONNECTION_FAILED');
     }
     return result.response?.result;

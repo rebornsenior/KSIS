@@ -13,7 +13,7 @@ class Data {
   delete(key){const copy={...this.value};delete copy[key];return new Data(copy);}
 }
 function fixture({fail=false}={}){
-  const calls=[];const ctx={window:{addEventListener(){},alert(){},KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return request.enabled?{eventId:request.eventId,year:'2026',labelVersion:2,registrationForm:'https://docs.google.com/forms/d/e/test/viewform'}:{eventId:request.eventId,disabled:true};}}},URL,TextEncoder,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=> 'new-id'}};
+  const calls=[];const ctx={window:{addEventListener(){},alert(){},KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return request.enabled?{eventId:request.eventId,year:'2026',schemaVersion:3,labelVersion:2,registrationForm:'https://docs.google.com/forms/d/e/test/viewform'}:{eventId:request.eventId,disabled:true,schemaVersion:3};}}},URL,TextEncoder,Uint8Array,crypto:{subtle:webcrypto.subtle,randomUUID:()=> 'new-id'}};
   vm.runInNewContext(source.slice(start,end)+'\nthis.sync=syncCalendarRegistration;',ctx);
   return {calls,sync:(value,metadata={})=>ctx.sync({get:key=>key==='collection'?'calendar':key==='data'?new Data(value):metadata[key]})};
 }

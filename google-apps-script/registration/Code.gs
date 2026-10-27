@@ -5,10 +5,15 @@
  * payerItemId:"101",readers:["staff@example.com"],deleters:["staff@example.com"]}}}
  */
 function ksisRegistration(request) {
-  if (!request || !['list', 'delete', 'sync', 'info'].includes(request.action)) throw new Error('INVALID_ACTION');
+  if (!request || !['list', 'delete', 'sync', 'info', 'capabilities'].includes(request.action)) throw new Error('INVALID_ACTION');
   const email = Session.getActiveUser().getEmail().trim().toLowerCase();
   if (!email) throw new Error('SIGN_IN_REQUIRED');
-  if (request.action === 'sync') return ksisSyncEvent_(request, email);
+  if (request.action === 'capabilities') {
+    const access=JSON.parse(PropertiesService.getScriptProperties().getProperty('KSIS_AUTOMATION') || '{}');
+    if(!(access.managers || []).includes(email))throw new Error('FORBIDDEN');
+    return {schemaVersion:3};
+  }
+  if (request.action === 'sync') return request.formStructure==='per-event' ? ksisSyncPerEvent_(request,email) : ksisSyncEvent_(request, email);
   if (typeof request.eventId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(request.eventId)) throw new Error('INVALID_EVENT_ID');
   const raw = PropertiesService.getScriptProperties().getProperty('KSIS_REGISTRATION');
   if (!raw) throw new Error('NOT_CONFIGURED');
@@ -24,38 +29,47 @@ function ksisRegistration(request) {
   for (const key of ['formId', 'eventItemId', 'eventValue', 'nameItemId', 'phoneItemId', 'payerItemId']) {
     if (typeof event[key] !== 'string' || !event[key]) throw new Error('INVALID_EVENT_CONFIG');
   }
-  const form = FormApp.openById(event.formId); // Also enforces the caller's Google Forms access.
+  const sources=event.structure==='per-event' ? [event,...(event.archivedForms || [])] : [event];
+  const form = FormApp.openById(event.formId);
   if (request.action === 'info') return ksisEventInfo_(request.eventId,event,form);
-  function record(response) {
-    const answers = {};
-    response.getItemResponses().forEach(item => {
-      answers[String(item.getItem().getId())] = item.getResponse();
-    });
-    if (![event.eventValue,...(event.previousValues || [])].includes(answers[event.eventItemId])) return null;
-    return {id:response.getId(),eventId:request.eventId,
-      name:String(answers[event.nameItemId] || ''),phone:String(answers[event.phoneItemId] || ''),
-      payer:String(answers[event.payerItemId] || ''),submittedAt:response.getTimestamp().toISOString()};
+  function record(response,mapping,index) {
+    const answers={};
+    response.getItemResponses().forEach(item=>{answers[String(item.getItem().getId())]=item.getResponse();});
+    if(![mapping.eventValue,...(mapping.previousValues || [])].includes(answers[mapping.eventItemId]))return null;
+    return {id:(event.structure==='per-event'?index+':':'')+response.getId(),eventId:request.eventId,
+      name:String(answers[mapping.nameItemId] || ''),phone:String(answers[mapping.phoneItemId] || ''),
+      payer:String(answers[mapping.payerItemId] || ''),submittedAt:response.getTimestamp().toISOString()};
   }
-  if (request.action === 'list') {
-    const records = form.getResponses().map(record).filter(Boolean);
-    records.sort((a,b) => b.submittedAt.localeCompare(a.submittedAt));
+  if(request.action==='list') {
+    const records=[];
+    sources.forEach((mapping,index)=>{
+      if(!(mapping.readers || []).some(value=>value.toLowerCase()===email))return;
+      const sourceForm=index===0?form:FormApp.openById(mapping.formId);
+      sourceForm.getResponses().forEach(response=>{const item=record(response,mapping,index);if(item)records.push(item);});
+    });
+    records.sort((a,b)=>b.submittedAt.localeCompare(a.submittedAt));
     return {eventId:request.eventId,title:event.title || event.eventValue,records};
   }
-  if (typeof request.responseId !== 'string' || !request.responseId || request.confirmDelete !== true) throw new Error('CONFIRM_REQUIRED');
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
+  if(typeof request.responseId!=='string' || !request.responseId || request.confirmDelete!==true)throw new Error('CONFIRM_REQUIRED');
+  let index=0,responseId=request.responseId;
+  if(event.structure==='per-event'){
+    const match=request.responseId.match(/^(\d+):(.+)$/);
+    if(!match || !sources[Number(match[1])])throw new Error('EVENT_MISMATCH');
+    index=Number(match[1]);responseId=match[2];
+  }
+  const mapping=sources[index];
+  if(!(mapping.deleters || []).some(value=>value.toLowerCase()===email))throw new Error('FORBIDDEN');
+  const sourceForm=index===0?form:FormApp.openById(mapping.formId);
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
   try {
-    const response = form.getResponse(request.responseId);
-    const current = record(response);
-    if (!current) throw new Error('EVENT_MISMATCH');
-    // The UI must show this exact event/person and warn deletion is irreversible.
-    if (current.name !== request.expectedName || current.submittedAt !== request.expectedSubmittedAt) throw new Error('RESPONSE_CHANGED');
-    form.deleteResponse(request.responseId);
-    if (form.getResponses().some(item => item.getId() === request.responseId)) throw new Error('DELETE_NOT_CONFIRMED');
+    const current=record(sourceForm.getResponse(responseId),mapping,index);
+    if(!current)throw new Error('EVENT_MISMATCH');
+    if(current.name!==request.expectedName || current.submittedAt!==request.expectedSubmittedAt)throw new Error('RESPONSE_CHANGED');
+    sourceForm.deleteResponse(responseId);
+    if(sourceForm.getResponses().some(item=>item.getId()===responseId))throw new Error('DELETE_NOT_CONFIRMED');
     return {deleted:true,eventId:request.eventId,responseId:request.responseId};
-  } finally { lock.releaseLock(); }
+  } finally {lock.releaseLock();}
 }
-
 /** Run once manually as an existing registration administrator. No secret is needed. */
 function setupRegistrationAutomation() {
   const store = PropertiesService.getScriptProperties();
@@ -167,7 +181,7 @@ function ksisSyncEvent_(request, email) {
 function ksisEventInfo_(eventId,event,form) {
   const item = form.getItemById(Number(event.eventItemId)).asListItem();
   const url = form.createResponse().withItemResponse(item.createResponse(event.eventValue)).toPrefilledUrl();
-  return {eventId,title:event.title || event.eventValue,date:event.date || '',year:event.year || '',category:event.category || '',labelVersion:event.labelVersion || 1,registrationForm:url};
+  return {eventId,title:event.title || event.eventValue,date:event.date || '',year:event.year || '',category:event.category || '',labelVersion:event.labelVersion || 1,...(event.structure==='per-event'?{schemaVersion:3,structure:'per-event',month:event.month}:{}),registrationForm:url};
 }
 
 function ksisChoiceKey_(formId,value) {

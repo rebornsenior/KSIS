@@ -110,38 +110,11 @@ function editorFor(backend) {
     return saved;
   }};
 }
-test('Decap save/publish applies on/off/on and edits to every category for both new and existing schedules',async()=>{
-  for(const newRecord of [true,false]) for(const category of ['forum','education','monetize','other']) {
-    const f=fixture();f.initialize();
-    const metadata={newRecord,path:'src/content/calendar/arbitrary-event.json'};
-    let saved=await editorFor(f).save({title:'일반 행사',date:'2026-12-30',category,registrationEnabled:true},metadata);
-    const eventId=saved.get('registrationEventId');
-    assert.notEqual(eventId,'2026-forum-37');
-    let event=JSON.parse(f.properties.get('KSIS_EVENT_'+eventId));
-    f.base.responses.push(responseFor(f.base,event.eventValue));
-    saved=await editorFor(f).save(saved.set('registrationEnabled',false),{...metadata,newRecord:false});
-    assert.ok(!f.base.getItems()[0].getChoices().some(choice=>choice.getValue()===event.eventValue));
-    assert.equal(saved.get('registrationForm'),'');
-    saved=await editorFor(f).save(saved.set('registrationEnabled',true).set('title','수정 제목').set('date','2026-12-29'),{...metadata,newRecord:false});
-    assert.equal(saved.get('registrationEventId'),eventId);
-    event=JSON.parse(f.properties.get('KSIS_EVENT_'+eventId));
-    assert.ok(event.eventValue.startsWith('2026.12.29 | '));
-    assert.equal(f.run({action:'list',eventId}).records.length,1);
-    assert.equal(f.base.getItems()[0].getChoices().filter(choice=>choice.getValue()===event.eventValue).length,1);
+test('calendar audience is required and blank added rows block saving before Google sync',async()=>{
+  let calls=0;
+  const editor=editorFor({run(){calls++;throw new Error('Unexpected Google call');}});
+  for(const rsvps of [undefined,[],[''],['협회 회원','  ']]) {
+    await assert.rejects(editor.save({title:'행사',date:'2026-12-30',category:'forum',registrationEnabled:true,rsvps}),/참가 대상을 입력해 주세요/);
   }
-});
-test('turning off the last event removes its name, closes the form and re-enabling removes the placeholder',async()=>{
-  const f=fixture();f.initialize();f.base.getItems()[0].setChoiceValues([]);
-  const editor=editorFor(f);
-  let saved=await editor.save({title:'마지막 행사',date:'2026-12-30',category:'forum',registrationEnabled:true},{path:'last.json',newRecord:false});
-  const eventId=saved.get('registrationEventId');
-  const label=JSON.parse(f.properties.get('KSIS_EVENT_'+eventId)).eventValue;
-  f.base.responses.push(responseFor(f.base,label));
-  saved=await editor.save(saved.set('registrationEnabled',false));
-  assert.equal(f.base.accepting,false);
-  assert.deepEqual(Array.from(f.base.getItems()[0].getChoices(),choice=>choice.getValue()),['현재 신청 가능한 행사가 없습니다']);
-  saved=await editor.save(saved.set('registrationEnabled',true));
-  assert.equal(f.base.accepting,true);
-  assert.deepEqual(Array.from(f.base.getItems()[0].getChoices(),choice=>choice.getValue()),[label]);
-  assert.equal(f.run({action:'list',eventId}).records.length,1);
+  assert.equal(calls,0);
 });

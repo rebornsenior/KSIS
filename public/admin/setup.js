@@ -128,6 +128,34 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     }
   });
   CMS.registerWidget('registration-form',RegistrationFormControl);
+  const AudienceControl = window.createClass({
+    items() {const value=this.props.value;return value?.toJS ? value.toJS() : (value || []);},
+    render() {
+      const h=window.h, saved=this.items(), items=saved.length?saved:[''];
+      return h('div',{},...items.map((value,index)=>h('div',{key:index,style:{display:'flex',gap:'8px',marginBottom:'10px'}},
+        h('input',{type:'text',value,placeholder:'예: 협회 회원, 일반 참가자','aria-label':(index+1)+'번 참가 대상',onChange:event=>this.props.onChange(items.map((item,i)=>i===index?event.target.value:item)),style:{flex:1,minWidth:0,padding:'12px',border:'1px solid #cbd5e1',borderRadius:'4px'}}),
+        h('button',{type:'button',disabled:items.length===1,onClick:()=>this.props.onChange(items.filter((_,i)=>i!==index)),style:{padding:'8px'}},'삭제'))),
+        h('button',{type:'button',onClick:()=>this.props.onChange([...items,'']),style:{padding:'8px 14px'}},'참가 대상 추가'));
+    }
+  });
+  CMS.registerWidget('event-audience',AudienceControl);
+  const RegistrationEnabledControl = window.createClass({
+    getInitialState(){return {busy:false,message:'',error:false};},
+    render(){
+      const h=window.h, enabled=this.props.value===true;
+      return h('div',{},
+        h('button',{type:'button',role:'switch','aria-checked':enabled,disabled:this.state.busy,onClick:async()=>{
+          if(enabled){this.props.onChange(false);this.setState({message:'저장·게시하면 이 행사 신청서가 구글 드라이브 휴지통으로 이동합니다.',error:false});return;}
+          this.setState({busy:true,message:'구글 로그인 창에서 계정을 선택해 주세요.',error:false});
+          try{await window.KSISRegistration.connect();this.props.onChange(true);this.setState({message:'구글 연결 완료. 일정을 저장·게시하면 행사별 신청서가 연도·월 폴더에 자동 생성됩니다.',error:false});}
+          catch(error){this.setState({error:true,message:error.message==='GOOGLE_NOT_READY'?'구글 연결 준비가 완료됐습니다. 신청받기를 한 번 더 눌러 주세요.':'구글 연결을 완료하지 못했습니다. 팝업을 허용한 뒤 신청받기를 다시 눌러 주세요.'});}
+          finally{this.setState({busy:false});}
+        },style:{padding:'12px 20px',border:'1px solid #002147',borderRadius:'6px',background:enabled?'#002147':'white',color:enabled?'white':'#002147',fontSize:'16px',fontWeight:700,cursor:'pointer'}},this.state.busy?'구글 연결 중…':enabled?'신청받기 켜짐':'신청받기 켜기'),
+        h('p',{style:{fontSize:'16px',fontWeight:700,lineHeight:1.6,marginTop:'12px',color:'#002147'}},'신청받기를 켜고 구글 계정을 선택한 뒤 일정을 저장·게시하세요. 행사별 신청서가 연도·월 폴더에 자동 생성됩니다.'),
+        h('p',{'aria-live':'polite',role:this.state.error?'alert':'status',style:{color:this.state.error?'#b91c1c':'#334155'}},this.state.message));
+    }
+  });
+  CMS.registerWidget('registration-enabled',RegistrationEnabledControl);
   const RegistrationRosterControl = window.createClass({
     getInitialState() { return {open:false,connection:''}; },
 
@@ -137,13 +165,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     render() {
       const h=window.h,value=this.props.value || '';
       return h('div',{},
-        h('button',{type:'button',onClick:async()=>{
-          this.setState({connection:'구글 로그인 창을 확인해 주세요.'});
-          try {await window.KSISRegistration.connect();this.setState({connection:'구글 계정 연결 완료. 이제 게시할 수 있습니다.'});}
-          catch(error) {this.setState({connection:'구글 연결을 완료하지 못했습니다. 팝업 허용 후 다시 눌러 주세요. ('+error.message+')'});}
-        }},'게시 전 구글 계정 연결'),
-        this.state.connection && h('p',{'aria-live':'polite'},this.state.connection),
-        h('p',{},'「신청 받기」를 켜고 일정을 저장하면 행사 날짜의 연도에 맞는 공용 폼과 명단이 연결됩니다. 처음 연결할 때 구글 로그인이 필요합니다. 일정 삭제 전에는 신청 받기를 끄고 저장해 접수를 닫아 주세요.'),
+        h('p',{style:{fontSize:'14px',lineHeight:1.6}},value?'이 일정의 신청자 명단을 확인합니다. 신청받기를 끄고 저장하거나 일정을 삭제하면 이 행사 폼이 휴지통으로 이동합니다.': '신청받기를 켜고 저장·게시하면 명단을 확인할 수 있습니다.'),
         h('button',{type:'button',disabled:!value,onClick:()=>this.setState({open:!this.state.open}),style:{padding:'10px 16px',border:'1px solid #cbd5e1',borderRadius:'6px',background:'#002147',color:'white',cursor:'pointer'}},this.state.open?'신청 명단 닫기':'신청 명단 열기'),
         this.state.open && h('iframe',{key:value,title:'이 일정의 신청 명단 관리',src:'/admin/registration-manager.html?event='+encodeURIComponent(value),style:{width:'100%',height:'620px',border:'1px solid #e2e8f0',borderRadius:'6px',marginTop:'16px'}})
       );
@@ -183,18 +205,18 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     data=data.set('registrationEventId',eventId);
     if(!eventId || !title?.trim() || !date) throw new Error('신청 연결을 위해 일정 제목과 날짜를 입력해 주세요.');
     try {
-      const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,category:data.get('category') || 'other',enabled});
+      const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',enabled});
       if(!enabled) {
-        if(result?.eventId!==eventId || result.disabled!==true) throw new Error('INVALID_SYNC_RESULT');
+        if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==3) throw new Error('INVALID_SYNC_RESULT');
         return data.set('registrationForm','').delete('registrationRefreshRequested');
       }
-      if(result?.labelVersion!==2) throw new Error('REGISTRATION_CODE_OUTDATED');
+      if(result?.schemaVersion!==3 || result?.labelVersion!==2) throw new Error('REGISTRATION_CODE_OUTDATED');
       let url;
       try {url=new URL(result?.registrationForm);} catch {throw new Error('INVALID_SYNC_RESULT');}
       if(result.eventId!==eventId || result.year!==date.slice(0,4) || url.protocol!=='https:' || url.hostname!=='docs.google.com' || !/^\/forms\/d\//.test(url.pathname)) throw new Error('INVALID_SYNC_RESULT');
       return data.set('registrationForm',url.href).set('registrationEventId',result.eventId).set('registrationYear',result.year).delete('registrationRefreshRequested');
     } catch(error) {
-      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 로그인 창이 열리지 않았거나 완료되지 않았습니다. 신청 명단 관리의 게시 전 구글 계정 연결 버튼을 먼저 눌러 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION' || error.message==='REGISTRATION_CODE_OUTDATED'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
+      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 연결을 다시 진행하려면 신청받기를 끈 뒤 다시 켜 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION' || error.message==='REGISTRATION_CODE_OUTDATED'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
       window.alert(reason+' 일정 저장을 중단했습니다. 다시 시도해 주세요.');
       throw error;
     }
@@ -209,6 +231,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(group==='notices' && data.noticeCategory && !['participation','association','recruitment'].includes(data.noticeCategory)) message='공지 분류를 다시 선택해 주세요.';
     if(group==='insights' && (data.tags?.length || 0)>5) message='해시태그는 최대 5개입니다.';
     if(group==='insights' && (data.tags || []).some(tag=>Array.from(tag).length>15)) message='해시태그는 하나당 15자 이내로 입력해 주세요.';
+    if(group==='calendar' && (!Array.isArray(data.rsvps) || !data.rsvps.length || data.rsvps.some(item=>typeof item!=='string' || !item.trim()))) message='참가 대상을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
     if(message){window.alert(message);throw new Error(message);}
     if(group === 'member_filters') {
       const categories = data.categories || [];
@@ -243,8 +266,8 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     const eventId=await registrationIdFor(entry,data,false),title=data.get('title'),date=data.get('date');
     try {
       if(!eventId || !title || !date) throw new Error('MISSING_REGISTRATION_METADATA');
-      const result=await window.KSISRegistration.call({action:'sync',eventId,title,date,enabled:false});
-      if(result?.eventId!==eventId || result.disabled!==true) throw new Error('CLOSE_NOT_CONFIRMED');
+      const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,enabled:false});
+      if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==3) throw new Error('CLOSE_NOT_CONFIRMED');
     } catch(error) {
       window.alert('구글 폼의 행사 접수를 닫지 못해 일정 삭제를 중단했습니다. 구글 계정을 연결한 뒤 다시 삭제해 주세요. ('+error.message+')');
       throw error;
@@ -339,13 +362,13 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'장소',name:'location',widget:'string'},
         {label:'일정 설명',name:'description',widget:'text'},
         {label:'분류',name:'category',widget:'select',options:[{label:'정기 포럼',value:'forum'},{label:'교육 특강',value:'education'},{label:'수익 실무',value:'monetize'},{label:'친목 소모임',value:'other'}]},
-        {label:'참가 대상 안내',name:'rsvps',widget:'list',required:false,field:{label:'참가 대상',name:'audience',widget:'string'},hint:'회원·일반 참가자 등의 안내만 입력하세요. 이름·전화번호 등 신청자 정보는 입력하지 마세요.'},
-        {label:'신청 받기 · 저장 시 구글 폼 자동 연결',name:'registrationEnabled',widget:'boolean',default:false,required:false,hint:'저장 시 실제 구글 폼에 행사 옵션이 추가됩니다. 행사 연도 폼이 없으면 생성됩니다.'},
+        {label:'참가 대상',name:'rsvps',widget:'event-audience',required:true,hint:'참가 가능한 대상을 입력하세요. 예: 협회 회원, 일반 참가자'},
+        {label:'참가 신청 접수',name:'registrationEnabled',widget:'registration-enabled',default:false,required:true},
 
         {label:'참가 신청 폼 · 화면 미리보기',name:'registrationForm',widget:'registration-form',required:false},
-        {label:'신청 명단 관리 · 이 일정',name:'registrationEventId',widget:'registration-roster',required:false},
+        {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:false},
         {label:'신청 연결 연도',name:'registrationYear',widget:'hidden',required:false},
-        {label:'관련 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
+        {label:'행사 상세 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
       ],
     },
     {
