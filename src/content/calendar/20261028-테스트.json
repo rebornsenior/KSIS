@@ -13,14 +13,14 @@
         "type": "text",
         "title": "전화번호",
         "required": true,
-        "help": "ㅏㅏㅏ"
+        "help": "예시)010-2564-8456 <- 이렇게 입력하면 됩니다."
       },
       {
         "id": "payer",
         "type": "text",
         "title": "입금자명",
         "required": false,
-        "help": "010-2564-8456"
+        "help": "이렇게 입력하면 됩니다."
       }
     ],
     "fees": [
@@ -54,7 +54,8 @@
         "amount": "50000",
         "note": ""
       }
-    ]
+    ],
+    "paid": true
   },
   "registrationEnabled": true,
   "time": "18:49-18:50",
