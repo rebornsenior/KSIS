@@ -428,7 +428,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'참가 신청 접수',name:'registrationEnabled',widget:'registration-enabled',default:false,required:true},
         {label:'신청 질문·참가비 편집',name:'participationFee',widget:'registration-builder',required:true,conditional:{field:'registrationEnabled',value:true}},
         {label:' ',name:'registrationForm',widget:'registration-form',required:true},
-        {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:true},
+        {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:false},
         {label:'신청 연결 연도',name:'registrationYear',widget:'hidden',required:false},
         {label:'행사 상세 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
       ],
