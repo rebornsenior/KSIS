@@ -1,0 +1,47 @@
+{
+  "participationFee": {
+    "questions": [
+      {
+        "id": "name",
+        "type": "text",
+        "title": "신청자 이름",
+        "required": true,
+        "help": "여기에 입력하면 됩니다."
+      },
+      {
+        "id": "phone",
+        "type": "text",
+        "title": "전화번호",
+        "required": true,
+        "help": "ㅏㅏㅏ"
+      },
+      {
+        "id": "payer",
+        "type": "text",
+        "title": "입금자명",
+        "required": false,
+        "help": "010-2564-8456"
+      }
+    ],
+    "fees": [
+      {
+        "grade": "일반인",
+        "amount": "15000",
+        "note": "10회 무료"
+      }
+    ]
+  },
+  "registrationEnabled": true,
+  "time": "18:49-18:50",
+  "date": "2026-10-28",
+  "location": "테스트",
+  "registrationYear": "2026",
+  "title": "테스트",
+  "rsvps": [
+    "협회 회원"
+  ],
+  "registrationEventId": "evt-5abc6065-2625-463f-a284-d9dc394c7e91",
+  "description": "테스트",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSeNlw-LOhNE7lBoqQOqkpqCZxnpNntdgnxd-HcmklOzZZdkLQ/viewform?usp=pp_url&entry.336968613=2026.10.28+%7C+%EC%88%98%EC%9D%B5+%EC%8B%A4%EB%AC%B4+%7C+%22%ED%85%8C%EC%8A%A4%ED%8A%B8%22",
+  "category": "monetize"
+}
