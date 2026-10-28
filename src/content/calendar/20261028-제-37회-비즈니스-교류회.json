@@ -1,0 +1,71 @@
+{
+  "participationFee": {
+    "questions": [
+      {
+        "id": "name",
+        "type": "text",
+        "title": "신청자 이름",
+        "required": true
+      },
+      {
+        "id": "phone",
+        "type": "text",
+        "title": "전화번호",
+        "required": true
+      },
+      {
+        "id": "payer",
+        "type": "text",
+        "title": "입금자명",
+        "required": false,
+        "help": "실제 입금하시는 성함을 작성해주시면 됩니다."
+      }
+    ],
+    "fees": [
+      {
+        "grade": "플래티넘 회원",
+        "amount": "10000",
+        "note": "10회 무료(이후 1만원/80% 할인)"
+      },
+      {
+        "grade": "골드 회원",
+        "amount": "15000",
+        "note": "5회 무료(이후 1만5천원/70% 할인)"
+      },
+      {
+        "grade": "실버 회원",
+        "amount": "25000",
+        "note": "2회 무료(이후 2만5천원/50% 할인)"
+      },
+      {
+        "grade": "브론즈 회원",
+        "amount": "35000",
+        "note": "30% 할인"
+      },
+      {
+        "grade": "추천동반인",
+        "amount": "20000",
+        "note": ""
+      },
+      {
+        "grade": "일반인",
+        "amount": "50000",
+        "note": ""
+      }
+    ],
+    "paid": true
+  },
+  "registrationEnabled": false,
+  "time": "08:00 - 10:00",
+  "date": "2026-11-07",
+  "location": "한국시니어교류협회 사무실(마포구 신촌로 200-1황금바늘빌딩 2층, 이대역에서 100m)",
+  "title": "제 37회 비즈니스 교류회",
+  "rsvps": [
+    "협회 회원",
+    "추천 동반자",
+    "일반인"
+  ],
+  "link": "https://cafe.naver.com/ksis1?iframe_url_utf8=%2Fca-fe%2Fcafes%2F30919788%2Farticles%2F669%253FreferrerAllArticles%3Dtrue%2526oldPath%3D%252FArticleRead.nhn%253Fclubid%253D30919788%2526articleid%253D669%2526referrerAllArticles%253Dtrue",
+  "description": "1인 기업 시대로의 변화, 역발상적 경영리더십 분석 : 김형환 스타트경영캠퍼스 대표 교수",
+  "category": "forum"
+}
