@@ -201,7 +201,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
             ['select','checkbox'].includes(question.type) ? h('ul',{},...(question.options||[]).filter(Boolean).map((option,i)=>h('li',{key:i},(question.type==='checkbox'?'□ ':'○ ')+option))) : h('p',{style:{color:'#94a3b8',fontSize:'13px'}},'내 답변'))),
           fees.length>0 && h('div',{style:{...panelStyle,marginTop:'12px'}},h('strong',{},'참가 비용'),
             ...fees.map((fee,index)=>h('p',{key:index},(fee.grade||'등급')+' · '+(fee.amount===''?'금액 입력 전':Number(fee.amount).toLocaleString('ko-KR')+'원')+(fee.note?' ('+fee.note+')':''))),
-            h('p',{},'회원 등급 / 참가 유형 *'))));
+            h('p',{},''))));
     }
   });
   CMS.registerWidget('registration-builder',RegistrationBuilderControl);
@@ -424,9 +424,9 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'분류',name:'category',widget:'select',options:[{label:'정기 포럼',value:'forum'},{label:'교육 특강',value:'education'},{label:'수익 실무',value:'monetize'},{label:'친목 소모임',value:'other'}]},
         {label:'참가 대상',name:'rsvps',widget:'event-audience',required:true,hint:'참가 가능한 대상을 입력하세요. 예: 협회 회원, 일반 참가자'},
         {label:'참가 신청 접수',name:'registrationEnabled',widget:'registration-enabled',default:false,required:true},
-        {label:'신청 질문·참가비 편집',name:'participationFee',widget:'registration-builder',required:false,conditional:{field:'registrationEnabled',value:true}},
-        {label:'게시된 신청 폼',name:'registrationForm',widget:'registration-form',required:false},
-        {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:false},
+        {label:'신청 질문·참가비 편집',name:'participationFee',widget:'registration-builder',required:true,conditional:{field:'registrationEnabled',value:true}},
+        {label:' ',name:'registrationForm',widget:'registration-form',required:true},
+        {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:true},
         {label:'신청 연결 연도',name:'registrationYear',widget:'hidden',required:false},
         {label:'행사 상세 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
       ],
@@ -545,4 +545,9 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       }));
   }
 }
+
+
+
+
+
 
