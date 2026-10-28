@@ -77,7 +77,7 @@
     ],
     "paid": true
   },
-  "registrationEnabled": true,
+  "registrationEnabled": false,
   "time": "12:00 - 2:00",
   "date": "2026-10-31",
   "location": "테스트",
@@ -88,6 +88,6 @@
   ],
   "registrationEventId": "evt-e19a2f36-57fc-4925-b53b-77b5e3c812fc",
   "description": "테스트입니다",
-  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSdv5UzCugHdFo1bm-DTX4FsiHyRhw683AsDaomL-ZQ06TxZDw/viewform?usp=pp_url&entry.570641869=2026.10.31+%7C+%EA%B5%90%EC%9C%A1+%ED%8A%B9%EA%B0%95+%7C+%22%ED%85%8C%EC%8A%A4%ED%8A%B803%22",
+  "registrationForm": "",
   "category": "education"
 }
