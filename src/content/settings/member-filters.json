@@ -1,1 +1,21 @@
-{"allLabel":"전체","categories":[{"id":"식품","label":"식품"},{"id":"제조","label":"제조"},{"id":"기타","label":"기타"}]}
+{
+  "allLabel": "전체",
+  "categories": [
+    {
+      "id": "식품",
+      "label": "식품"
+    },
+    {
+      "id": "제조",
+      "label": "제조"
+    },
+    {
+      "id": "기타",
+      "label": "기타"
+    },
+    {
+      "id": "industry-e879d17d-c34c-4bf4-9f3d-bac7ba27af76",
+      "label": "디자인"
+    }
+  ]
+}
