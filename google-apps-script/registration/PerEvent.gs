@@ -26,19 +26,25 @@ function ksisSyncPerEvent_(request,email) {
           return {eventId:request.eventId,disabled:true,year,schemaVersion:4};
         }
         const file=DriveApp.getFileById(event.formId);
+        let trashDenied=false;
         if(!file.isTrashed()) {
           FormApp.openById(event.formId).setAcceptingResponses(false);
-          file.setTrashed(true);
+          try {file.setTrashed(true);} catch(error) {
+            // Editors can close a shared form but only its owner can trash it.
+            // Keep closure successful; never claim the file was trashed.
+            if(!/access denied|permission|권한/i.test(String(error.message || error))) throw error;
+            trashDenied=true;
+          }
         }
-        if(!file.isTrashed()) throw new Error('TRASH_NOT_CONFIRMED');
-        // Mark only after Drive confirms. Retry is safe if CMS save fails.
-        event.enabled=false;event.trashed=true;store.setProperty(key,JSON.stringify(event));
+        if(!file.isTrashed() && !trashDenied)throw new Error('TRASH_NOT_CONFIRMED');
+        event.enabled=false;event.trashed=file.isTrashed();event.trashPending=!event.trashed;
+        store.setProperty(key,JSON.stringify(event));
       } else if(event) {
         // Shared annual forms contain other events: remove only this option.
         ksisRetireAnnual_(event,request.eventId,store);
         event.enabled=false;store.setProperty(key,JSON.stringify(event));
       }
-      return {eventId:request.eventId,disabled:true,year,schemaVersion:4};
+      return {eventId:request.eventId,disabled:true,year,schemaVersion:4,trashPending:event?.trashPending===true};
     }
     if(!event || event.structure!=='per-event') {
       const archives=event ? [event] : [];
@@ -87,7 +93,7 @@ function ksisSyncPerEvent_(request,email) {
     form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.'+feeText);
     form.setCollectEmail(false);form.setLimitOneResponsePerUser(false);form.setPublishingSummary(false);
     form.setPublished(true);form.setAcceptingResponses(true);
-    event.enabled=true;event.trashed=false;event.ready=true;
+    event.enabled=true;event.trashed=false;event.trashPending=false;event.ready=true;
     store.setProperty(key,JSON.stringify(event));
     return ksisEventInfo_(request.eventId,event,form);
   } finally {lock.releaseLock();}

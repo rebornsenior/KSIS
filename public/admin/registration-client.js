@@ -61,7 +61,16 @@ window.KSISRegistration = (() => {
       if(!executionError && response.status===403) throw new Error('API_EXECUTION_FORBIDDEN');
       const message=String(executionError?.errorMessage || result.error?.status || 'CONNECTION_FAILED');
       const codes=['AUTOMATION_NOT_CONFIGURED','INVALID_ACTION','FORBIDDEN','EVENT_YEAR_CHANGED','EVENT_LABEL_CONFLICT','INVALID_EVENT_DATE','INVALID_EVENT_TITLE','INVALID_EVENT_CATEGORY','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','TRASH_NOT_CONFIRMED','FORM_FOLDER_TRASHED','REGISTRATION_CODE_OUTDATED'];
-      throw new Error(codes.find(code=>message.includes(code)) || 'CONNECTION_FAILED');
+      const code=codes.find(code=>message.includes(code));
+      const frame=executionError?.scriptStackTraceElements?.find(frame=>
+        /^\w+$/.test(frame.function || '') && Number.isInteger(frame.lineNumber) && frame.lineNumber>0);
+      const reference=!code && frame ? ' ['+frame.function+':'+frame.lineNumber+']' : '';
+      const error=new Error((code || 'CONNECTION_FAILED')+reference);
+      // Keep the function exception available to diagnostics without logging
+      // OAuth credentials or any request/response data from the roster.
+      error.backendMessage=executionError?.errorMessage || '';
+      error.backendStack=executionError?.scriptStackTraceElements || [];
+      throw error;
     }
     return result.response?.result;
   }

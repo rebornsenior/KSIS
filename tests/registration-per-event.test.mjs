@@ -12,7 +12,7 @@ function fixture(){
   function folder(name,parent){const item={id:'folder-'+(++id),name,parent,isTrashed:()=>false,getId(){return this.id;},createFolder(name){return folder(name,this.id);},getFoldersByName(name){return iterator([...folders.values()].filter(f=>f.parent===this.id&&f.name===name));}};folders.set(item.id,item);return item;}
   function createForm(title){
     const formId='form-'+(++id),items=[];
-    const file={trashed:false,getId:()=>formId,isTrashed(){return this.trashed;},setTrashed(value){if(failTrash)throw Error('TRASH_FAILED');this.trashed=value;return this;},moveTo(folder){if(failMove)throw Error('MOVE_FAILED');this.parent=folder.getId();return this;},setName(name){this.name=name;return this;}};files.set(formId,file);
+    const file={trashed:false,getId:()=>formId,isTrashed(){return this.trashed;},setTrashed(value){if(failTrash)throw Error(failTrash==='denied'?'Access denied: DriveApp.':'TRASH_FAILED');this.trashed=value;return this;},moveTo(folder){if(failMove)throw Error('MOVE_FAILED');this.parent=folder.getId();return this;},setName(name){this.name=name;return this;}};files.set(formId,file);
     const form={id:formId,title,responses:[],accepting:false,getId:()=>formId,getItems:()=>items,getItemById:key=>items.find(item=>item.id===String(key)),
       add(type){const item={id:String(++id),type,title:'',choices:[],getId(){return this.id;},getType(){return this.type;},getTitle(){return this.title;},setTitle(value){this.title=value;return this;},setHelpText(value){this.help=value;return this;},setRequired(value){this.required=value;return this;},asListItem(){return this;},asTextItem(){return this;},asParagraphTextItem(){return this;},asCheckboxItem(){return this;},setChoiceValues(values){if(failChoice)throw Error('CHOICE_FAILED');this.choices=values;return this;},getChoices(){return this.choices.map(value=>({getValue:()=>value}));},createResponse:value=>({value})};items.push(item);return item;},
       addListItem(){return this.add('LIST');},addTextItem(){return this.add('TEXT');},addParagraphTextItem(){return this.add('PARAGRAPH_TEXT');},addCheckboxItem(){return this.add('CHECKBOX');},deleteItem(item){items.splice(items.indexOf(item),1);},setTitle(value){this.title=value;},setDescription(value){this.description=value;},setCollectEmail(){},setLimitOneResponsePerUser(){},setPublishingSummary(){},setPublished(){},setAcceptingResponses(value){this.accepting=value;},
@@ -92,4 +92,18 @@ test('confirmed closure succeeds on retry even if Drive no longer exposes the tr
   const result=f.run({...request,enabled:false});
   assert.equal(result.disabled,true);
   assert.equal(result.eventId,request.eventId);
+});
+
+ test('an editor can close a form even when its owner alone can trash it',()=>{
+  const f=fixture();f.run(request);const event=f.event('event-1');
+  f.failTrash('denied');
+  const result=f.run({...request,enabled:false});
+  assert.equal(result.disabled,true);assert.equal(result.trashPending,true);
+  assert.equal(f.forms.get(event.formId).accepting,false);
+  assert.equal(f.files.get(event.formId).trashed,false);
+  assert.equal(f.event('event-1').enabled,false);
+  assert.equal(f.run({...request,enabled:false}).disabled,true);
+  f.failTrash(false);f.run(request);
+  assert.equal(f.event('event-1').formId,event.formId);
+  assert.equal(f.event('event-1').trashPending,false);
 });

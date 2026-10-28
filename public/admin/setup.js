@@ -132,7 +132,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       const h=window.h, enabled=this.props.value===true;
       return h('div',{},
         h('button',{type:'button',role:'switch','aria-checked':enabled,disabled:this.state.busy,onClick:async()=>{
-          if(enabled){this.props.onChange(false);this.setState({message:'저장·게시하면 이 행사 신청서가 구글 드라이브 휴지통으로 이동합니다.',error:false});return;}
+          if(enabled){this.props.onChange(false);this.setState({message:'저장·게시하면 신청 접수가 종료됩니다. 휴지통 이동 권한이 없는 공유 폼은 파일을 보관합니다.',error:false});return;}
           this.setState({busy:true,message:'구글 로그인 창에서 계정을 선택해 주세요.',error:false});
           try{await window.KSISRegistration.connect();this.props.onChange(true);this.setState({message:'구글 연결 완료. 일정을 저장·게시하면 행사별 신청서가 연도·월 폴더에 자동 생성됩니다.',error:false});}
           catch(error){this.setState({error:true,message:error.message==='GOOGLE_NOT_READY'?'구글 연결 준비가 완료됐습니다. 신청받기를 한 번 더 눌러 주세요.':'구글 연결을 완료하지 못했습니다. 팝업을 허용한 뒤 신청받기를 다시 눌러 주세요.'});}
@@ -216,7 +216,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     render() {
       const h=window.h,value=this.props.value || '';
       return h('div',{},
-        h('p',{style:{fontSize:'14px',lineHeight:1.6}},value?'이 일정의 신청자 명단을 확인합니다. 신청받기를 끄고 저장하거나 일정을 삭제하면 이 행사 폼이 휴지통으로 이동합니다.': '신청받기를 켜고 저장·게시하면 명단을 확인할 수 있습니다.'),
+        h('p',{style:{fontSize:'14px',lineHeight:1.6}},value?'이 일정의 신청자 명단을 확인합니다. 신청받기를 끄고 저장하거나 일정을 삭제하면 접수가 종료됩니다. 휴지통 이동 권한이 없는 공유 폼은 파일을 보관합니다.': '신청받기를 켜고 저장·게시하면 명단을 확인할 수 있습니다.'),
         h('button',{type:'button',disabled:!value,onClick:()=>this.setState({open:!this.state.open}),style:{padding:'10px 16px',border:'1px solid #cbd5e1',borderRadius:'6px',background:'#002147',color:'white',cursor:'pointer'}},this.state.open?'신청 명단 닫기':'신청 명단 열기'),
         this.state.open && h('iframe',{key:value,title:'이 일정의 신청 명단 관리',src:'/admin/registration-manager.html?event='+encodeURIComponent(value),style:{width:'100%',height:'620px',border:'1px solid #e2e8f0',borderRadius:'6px',marginTop:'16px'}})
       );
@@ -264,6 +264,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',participationFee:feeRows,registrationQuestions:questions,enabled});
       if(!enabled) {
         if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==4) throw new Error('INVALID_SYNC_RESULT');
+        if(result.trashPending && !confirmedClosedRegistrations.has(eventId)) window.alert('신청 접수는 종료했습니다. 폼을 휴지통으로 옮길 권한이 없어 파일은 보관됩니다. 필요하면 폼 소유자 계정에서 정리해 주세요.');
         confirmedClosedRegistrations.add(eventId);
         return data.set('registrationForm','').delete('registrationRefreshRequested');
       }
@@ -334,6 +335,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       if(confirmedClosedRegistrations.has(eventId)) return;
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,enabled:false});
       if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==4) throw new Error('CLOSE_NOT_CONFIRMED');
+      if(result.trashPending) window.alert('신청 접수는 종료했습니다. 폼을 휴지통으로 옮길 권한이 없어 파일은 보관됩니다. 필요하면 폼 소유자 계정에서 정리해 주세요.');
       confirmedClosedRegistrations.add(eventId);
     } catch(error) {
       window.alert(error.message==='API_DEPLOYMENT_NOT_ACCESSIBLE'?'구글 신청 관리 API 배포에 접근할 수 없어 작업을 중단했습니다. 폼 삭제 문제가 아니라 Apps Script 배포 ID·실행 접근 권한 확인이 필요합니다.':'구글 폼의 행사 접수를 닫지 못해 작업을 중단했습니다. 구글 연결과 해당 폼의 접근 권한을 확인해 주세요. ('+error.message+')');

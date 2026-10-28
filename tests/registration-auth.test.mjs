@@ -31,3 +31,15 @@ test('per-event requests check backend version before mutation and reject an old
   const f=fixture('success',4,{status:200,error:{details:[{errorMessage:'NOT_FOUND'}]}});
   await assert.rejects(f.api.call({action:'info'}),/^Error: NOT_FOUND$/);
 });
+
+test('unknown script errors keep a safe failure location and backend diagnostics',async()=>{
+  const detail={errorMessage:'Exception: Temporary service failure',scriptStackTraceElements:[{function:'ksisSyncPerEvent_',lineNumber:72}]};
+  const f=fixture('success',4,{status:200,error:{details:[detail]}});
+  await assert.rejects(f.api.call({action:'info'}),error=>{
+    assert.equal(error.message,'CONNECTION_FAILED [ksisSyncPerEvent_:72]');
+    assert.equal(error.backendMessage,detail.errorMessage);
+    assert.equal(error.backendStack[0].lineNumber,72);
+    assert.ok(!error.message.includes('test-credential'));
+    return true;
+  });
+});
