@@ -23,13 +23,7 @@
         "help": "010-2564-8456"
       }
     ],
-    "fees": [
-      {
-        "grade": "일반인",
-        "amount": "15000",
-        "note": "10회 무료"
-      }
-    ]
+    "fees": []
   },
   "registrationEnabled": true,
   "time": "18:49-18:50",
