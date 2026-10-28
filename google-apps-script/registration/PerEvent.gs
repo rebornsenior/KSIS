@@ -100,21 +100,21 @@ function ksisNormalizeFees_(value) {
 function ksisNormalizeQuestions_(value) {
   const defaults=[{id:'name',type:'text',title:'신청자 이름',required:true},{id:'phone',type:'text',title:'전화번호',required:true},{id:'payer',type:'text',title:'입금자명',required:false}];
   if(value===undefined || value===null)return defaults.map(item=>({...item,help:'',options:[]}));
-  if(!Array.isArray(value) || value.length<3 || value.length>20)throw new Error('INVALID_QUESTIONS');
+  if(!Array.isArray(value) || value.length>20)throw new Error('INVALID_QUESTIONS');
   const seen=new Set();
   const questions=value.map(item=>{
     const id=String(item?.id || ''),type=String(item?.type || ''),title=String(item?.title || '').trim(),help=String(item?.help || '').trim();
     const required=item?.required!==false;
     if(!/^(?:name|phone|payer|q-[a-zA-Z0-9-]{1,70})$/.test(id) || seen.has(id) || !['text','paragraph','select','checkbox'].includes(type) || !title || title.length>150 || help.length>500)throw new Error('INVALID_QUESTIONS');
     seen.add(id);
-    if(['name','phone','payer'].includes(id) && (type!=='text' || ((id==='name' || id==='phone') && !required)))throw new Error('INVALID_CORE_QUESTION');
+
     const options=['select','checkbox'].includes(type) ? item.options : [];
     if(!Array.isArray(options) || options.length>30 || (['select','checkbox'].includes(type) && options.length<2))throw new Error('INVALID_QUESTION_OPTIONS');
     const cleanOptions=options.map(option=>String(option).trim());
     if(cleanOptions.some(option=>!option || option.length>150) || new Set(cleanOptions).size!==cleanOptions.length)throw new Error('INVALID_QUESTION_OPTIONS');
     return {id,type,title,help,required,options:cleanOptions};
   });
-  if(defaults.some(item=>!seen.has(item.id)))throw new Error('MISSING_CORE_QUESTION');
+
   return questions;
 }
 function ksisSyncExtraQuestions_(form,event,questions,store,key) {
@@ -196,3 +196,5 @@ function ksisRetireAnnual_(event,eventId,store) {
     if(registry){registry.inactiveValues=Array.from(new Set([...(registry.inactiveValues || []),...old]));store.setProperty(key,JSON.stringify(registry));}
   }
 }
+
+

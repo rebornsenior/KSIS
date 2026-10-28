@@ -111,7 +111,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         valid=url.protocol==='https:' && url.hostname==='docs.google.com' && /^\/forms\/d\/(?:e\/)?[a-zA-Z0-9_-]+\/viewform$/.test(url.pathname);
       } catch {}
       if(!valid) return null;
-      return h('div',{},h('strong',{},'게시된 신청 폼'),h('p',{},h('a',{href:value,target:'_blank',rel:'noopener noreferrer'},'실제 Google Form 열기 ↗')));
+      return h('div',{},h('strong',{},'게시된 신청 폼'),h('p',{},h('a',{href:value,target:'_blank',rel:'noopener noreferrer',style:{display:'inline-block',padding:'11px 18px',marginTop:'8px',background:'#002147',color:'#fff',borderRadius:'6px',fontWeight:700,textDecoration:'none'}},'실제 Google Form 열기 ↗')));
     }
   });
   CMS.registerWidget('registration-form',RegistrationFormControl);
@@ -148,10 +148,18 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     {id:'phone',type:'text',title:'전화번호',required:true},
     {id:'payer',type:'text',title:'입금자명',required:false},
   ];
+  const defaultRegistrationFees=()=>[
+    {grade:'플래티넘 회원',amount:'10000',note:'10회 무료(이후 1만원/80% 할인)'},
+    {grade:'골드 회원',amount:'15000',note:'5회 무료(이후 1만5천원/70% 할인)'},
+    {grade:'실버 회원',amount:'25000',note:'2회 무료(이후 2만5천원/50% 할인)'},
+    {grade:'브론즈 회원',amount:'35000',note:'30% 할인'},
+    {grade:'추천동반인',amount:'20000',note:''},
+    {grade:'일반인',amount:'50000',note:''},
+  ];
   const RegistrationBuilderControl = window.createClass({
     config(){
       const raw=this.props.value?.toJS?this.props.value.toJS():this.props.value;
-      return {questions:Array.isArray(raw?.questions)?raw.questions:defaultRegistrationQuestions(),fees:Array.isArray(raw)?raw:(Array.isArray(raw?.fees)?raw.fees:[])};
+      return {questions:Array.isArray(raw?.questions)?raw.questions:defaultRegistrationQuestions(),fees:Array.isArray(raw)?raw:(Array.isArray(raw?.fees)?raw.fees:(raw==null?defaultRegistrationFees():[]))};
     },
     render(){
       const h=window.h,{questions,fees}=this.config();
@@ -162,14 +170,14 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       const panelStyle={padding:'16px',border:'1px solid #cbd5e1',borderRadius:'8px',background:'#fff',minWidth:0};
       return h('div',{style:{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(min(100%,320px),1fr))',gap:'20px',alignItems:'start'}},
         h('div',{style:panelStyle},h('strong',{},'신청 항목 편집'),
-          h('p',{style:{fontSize:'13px',color:'#64748b'}},'질문을 입력하면 오른쪽 미리보기에 즉시 반영됩니다. 이름·전화번호·입금자명은 명단 관리에 필요한 필수 항목입니다.'),
+          h('p',{style:{fontSize:'13px',color:'#64748b'}},'질문 유형·필수 여부·삭제를 설정할 수 있습니다. 입력 내용은 오른쪽 미리보기에 즉시 반영됩니다.'),
           ...questions.map((question,index)=>h('div',{key:question.id,style:{padding:'12px',border:'1px solid #e2e8f0',borderRadius:'6px',marginTop:'12px'}},
             h('input',{type:'text',value:question.title||'',placeholder:'질문 제목','aria-label':(index+1)+'번 질문 제목',onChange:event=>editQuestion(index,{title:event.target.value}),style:inputStyle}),
             h('div',{style:{display:'flex',gap:'8px',alignItems:'center',marginTop:'8px'}},
-              h('select',{value:question.type||'text',disabled:['name','phone','payer'].includes(question.id),onChange:event=>editQuestion(index,{type:event.target.value,options:['select','checkbox'].includes(event.target.value)?(question.options?.length?question.options:['']):[]})},
+              h('select',{value:question.type||'text',onChange:event=>editQuestion(index,{type:event.target.value,options:['select','checkbox'].includes(event.target.value)?(question.options?.length?question.options:['']):[]})},
                 ...[['text','짧은 답변'],['paragraph','긴 답변'],['select','단일 선택'],['checkbox','복수 선택']].map(([value,label])=>h('option',{key:value,value},label))),
-              h('label',{},h('input',{type:'checkbox',checked:question.required!==false,disabled:['name','phone'].includes(question.id),onChange:event=>editQuestion(index,{required:event.target.checked})}),'필수'),
-              !['name','phone','payer'].includes(question.id) && h('button',{type:'button',onClick:()=>update('questions',questions.filter((_,i)=>i!==index))},'삭제')),
+              h('label',{},h('input',{type:'checkbox',checked:question.required!==false,onChange:event=>editQuestion(index,{required:event.target.checked})}),'필수'),
+              h('button',{type:'button',onClick:()=>update('questions',questions.filter((_,i)=>i!==index))},'삭제')),
             h('input',{type:'text',value:question.help||'',placeholder:'질문 안내 문구 (선택)',onChange:event=>editQuestion(index,{help:event.target.value}),style:{...inputStyle,marginTop:'8px'}}),
             ['select','checkbox'].includes(question.type) && h('textarea',{value:(question.options||[]).join('\n'),placeholder:'선택지 한 줄에 하나씩',onChange:event=>editQuestion(index,{options:event.target.value.split('\n')}),style:{...inputStyle,marginTop:'8px',minHeight:'72px'}}))),
           h('button',{type:'button',onClick:()=>update('questions',[...questions,{id:'q-'+crypto.randomUUID(),type:'text',title:'',required:false}]),style:{marginTop:'12px'}},'질문 추가'),
@@ -182,6 +190,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
           h('input',{type:'number',min:0,value:fee.amount??'',placeholder:'금액(원)','aria-label':(index+1)+'번 금액',onChange:event=>editFee(index,{amount:event.target.value}),style:{...inputStyle,marginTop:'8px'}}),
           h('input',{type:'text',value:fee.note||'',placeholder:'안내 사항 (예: 10회 무료, 이후 80% 할인)','aria-label':(index+1)+'번 안내',onChange:event=>editFee(index,{note:event.target.value}),style:{...inputStyle,marginTop:'8px'}}),
           h('button',{type:'button',onClick:()=>update('fees',fees.filter((_,i)=>i!==index)),style:{marginTop:'8px'}},'삭제'))),
+        h('button',{type:'button',onClick:()=>update('fees',defaultRegistrationFees()),style:{marginTop:'8px',marginRight:'8px'}},'기본 참가비 불러오기'),
         fees.length>0 && h('button',{type:'button',onClick:()=>update('fees',[...fees,{grade:'',amount:'',note:''}]),style:{marginTop:'8px'}},'등급·참가 유형 추가'),
         h('p',{style:{fontSize:'12px',color:'#64748b'}},fees.length?'등급명·금액·안내 사항이 Google Form에 표시됩니다.':'무료 행사는 참가비 안내 없이 신청을 받습니다.'))),
         h('div',{style:{...panelStyle,background:'#f8fafc'}},h('strong',{},'신청 폼 미리보기'),h('p',{style:{fontSize:'12px',color:'#64748b'}},'저장 후 생성될 Google Form의 항목 구성입니다. 입력·제출은 할 수 없습니다.'),
@@ -247,7 +256,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     try {
       const participationFee=data.get('participationFee');
       const raw=participationFee?.toJS ? participationFee.toJS() : participationFee;
-      const feeRows=Array.isArray(raw) ? raw : (raw?.fees || []);
+      const feeRows=Array.isArray(raw) ? raw : (Array.isArray(raw?.fees) ? raw.fees : (raw==null ? defaultRegistrationFees() : []));
       const questions=Array.isArray(raw?.questions) ? raw.questions : defaultRegistrationQuestions();
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',participationFee:feeRows,registrationQuestions:questions,enabled});
       if(!enabled) {
@@ -278,7 +287,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(group==='calendar' && (!Array.isArray(data.rsvps) || !data.rsvps.length || data.rsvps.some(item=>typeof item!=='string' || !item.trim()))) message='참가 대상을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
     if(group==='calendar' && data.registrationEnabled===true) {
       const config=data.participationFee;
-      const fees=Array.isArray(config)?config:(config?.fees || []);
+      const fees=Array.isArray(config)?config:(Array.isArray(config?.fees) ? config.fees : (config==null ? defaultRegistrationFees() : []));
       const questions=Array.isArray(config?.questions)?config.questions:defaultRegistrationQuestions();
       if(fees.some(item=>!String(item?.grade || '').trim() || String(item?.amount ?? '').trim()==='' || !Number.isFinite(Number(item.amount)) || Number(item.amount)<0)) message='참가비 등급과 금액을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
       if(questions.length>20 || questions.some(item=>!String(item?.title || '').trim() || !['text','paragraph','select','checkbox'].includes(item?.type) || (['select','checkbox'].includes(item.type) && (!Array.isArray(item.options) || item.options.some(option=>!String(option).trim()) || item.options.length<2)))) message='신청 질문의 제목과 선택지를 확인해 주세요. 선택형 질문에는 두 개 이상의 선택지가 필요합니다.';
@@ -416,7 +425,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
         {label:'참가 대상',name:'rsvps',widget:'event-audience',required:true,hint:'참가 가능한 대상을 입력하세요. 예: 협회 회원, 일반 참가자'},
         {label:'참가 신청 접수',name:'registrationEnabled',widget:'registration-enabled',default:false,required:true},
         {label:'신청 질문·참가비 편집',name:'participationFee',widget:'registration-builder',required:false,conditional:{field:'registrationEnabled',value:true}},
-        {label:' ',name:'registrationForm',widget:'registration-form',required:false},
+        {label:'게시된 신청 폼',name:'registrationForm',widget:'registration-form',required:false},
         {label:'이 행사 신청자 명단',name:'registrationEventId',widget:'registration-roster',required:false},
         {label:'신청 연결 연도',name:'registrationYear',widget:'hidden',required:false},
         {label:'행사 상세 안내 링크',name:'link',widget:'string',required:false,pattern:['^https?://[^\\s]+$', 'http:// 또는 https:// 주소를 입력해 주세요.']},
@@ -536,3 +545,4 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       }));
   }
 }
+
