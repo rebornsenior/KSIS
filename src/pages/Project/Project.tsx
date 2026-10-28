@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { COLORS } from '../../constants';
 import ContentLink from '../../components/ContentLink';
 import { textAlignment, headingAlignment, quoteAlignment, imageAlignment } from '../../content/alignment';
-import { Soup, BookOpen, Compass, FileText, Users, User, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Soup, BookOpen, Compass, FileText, User, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export function GallerySlider({ images }: { images: Array<{ url: string; caption?: string }>; key?: number }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -104,7 +104,6 @@ interface ExpertCardProps {
 function ExpertCard({ exp, categories, setSelectedExpert }: ExpertCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const catInfo = categories.find((c) => c.id === exp.category);
-  const Icon = catInfo ? catInfo.icon : Users;
   const iconColor = catInfo ? catInfo.color : '#64748B';
 
   return (
@@ -118,23 +117,23 @@ function ExpertCard({ exp, categories, setSelectedExpert }: ExpertCardProps) {
       onClick={() => setSelectedExpert(exp)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="bg-white p-8 rounded-[32px] shadow-sm border transition-all flex flex-col justify-between cursor-pointer"
+      className="bg-white rounded-2xl shadow-sm border transition-all flex flex-col overflow-hidden cursor-pointer"
       style={{
         borderColor: isHovered ? iconColor : '#F1F5F9',
         boxShadow: isHovered ? `0 20px 25px -5px ${iconColor}15, 0 8px 10px -6px ${iconColor}15` : undefined,
       }}
     >
-      <div>
-        <div className="flex justify-between items-start mb-6">
-          <div 
-            className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300"
-            style={{ 
-              backgroundColor: isHovered ? `${iconColor}25` : `${iconColor}15`,
-              transform: isHovered ? 'scale(1.05)' : 'none'
-            }}
-          >
-            <Icon className="w-6 h-6 animate-none" style={{ color: iconColor }} />
-          </div>
+      {exp.image && (
+        <img
+          src={exp.image}
+          alt={exp.name}
+          className="w-full aspect-video object-cover"
+          referrerPolicy="no-referrer"
+        />
+      )}
+      <div className="px-6 pt-4">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          {postDate(exp.date) && <time dateTime={postDate(exp.date).replaceAll('.','-')} className="text-base text-slate-400">{postDate(exp.date)}</time>}
           <span 
             className="px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors duration-300"
             style={{ 
@@ -145,25 +144,25 @@ function ExpertCard({ exp, categories, setSelectedExpert }: ExpertCardProps) {
             {exp.categoryName}
           </span>
         </div>
-        {postDate(exp.date) && <time dateTime={postDate(exp.date).replaceAll('.','-')} className="block text-base text-slate-400 mb-2">{postDate(exp.date)}</time>}
+
         <h3 
-          className="text-xl font-bold mb-2 leading-normal break-keep transition-colors duration-300"
+          className="text-xl font-bold mb-1 leading-normal break-keep transition-colors duration-300"
           style={{ color: isHovered ? iconColor : '#002147' }}
         >
           {exp.name}
         </h3>
         <p 
-          className="text-sm font-bold mb-4 transition-colors duration-300" 
+          className="text-sm font-bold mb-3 transition-colors duration-300" 
           style={{ color: isHovered ? iconColor : COLORS.gold }}
         >
           {exp.specialty}
         </p>
-        <p className="text-sm text-slate-500 leading-relaxed min-h-[72px] line-clamp-3 mb-8">
+        <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">
           {exp.desc}
         </p>
       </div>
       <button 
-        className="w-full py-4 rounded-xl border text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300"
+        className="mx-6 mt-6 mb-6 py-4 rounded-xl border text-sm font-bold flex items-center justify-center gap-2 transition-all duration-300"
         style={{
           backgroundColor: isHovered ? iconColor : '#F8FAFC',
           borderColor: isHovered ? iconColor : '#F1F5F9',
