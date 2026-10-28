@@ -1,0 +1,70 @@
+{
+  "participationFee": {
+    "questions": [
+      {
+        "id": "name",
+        "type": "text",
+        "title": "신청자 이름",
+        "required": true
+      },
+      {
+        "id": "phone",
+        "type": "text",
+        "title": "전화번호",
+        "required": true
+      },
+      {
+        "id": "payer",
+        "type": "text",
+        "title": "입금자명",
+        "required": false
+      }
+    ],
+    "fees": [
+      {
+        "grade": "플래티넘 회원",
+        "amount": "10000",
+        "note": "10회 무료(이후 1만원/80% 할인)"
+      },
+      {
+        "grade": "골드 회원",
+        "amount": "15000",
+        "note": "5회 무료(이후 1만5천원/70% 할인)"
+      },
+      {
+        "grade": "실버 회원",
+        "amount": "25000",
+        "note": "2회 무료(이후 2만5천원/50% 할인)"
+      },
+      {
+        "grade": "브론즈 회원",
+        "amount": "35000",
+        "note": "30% 할인"
+      },
+      {
+        "grade": "추천동반인",
+        "amount": "20000",
+        "note": ""
+      },
+      {
+        "grade": "일반인",
+        "amount": "50000",
+        "note": ""
+      }
+    ],
+    "paid": true
+  },
+  "registrationEnabled": true,
+  "time": "18:49-18:50",
+  "date": "2026-11-07",
+  "location": "테스트",
+  "registrationYear": "2026",
+  "title": "테스트",
+  "rsvps": [
+    "ㅇ"
+  ],
+  "registrationEventId": "evt-063bc075-e05a-4dc8-bc73-ce84942ca291",
+  "description": "ㄹㅇㅇ",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSepralUMUWeLh3Qdg2npTrW8udKJNA7WIQf_ZsZ0sAewFO7YA/viewform?usp=pp_url&entry.1659123092=2026.11.07+%7C+%EC%A0%95%EA%B8%B0+%ED%8F%AC%EB%9F%BC+%7C+%22%ED%85%8C%EC%8A%A4%ED%8A%B8%22",
+  "category": "forum"
+}
