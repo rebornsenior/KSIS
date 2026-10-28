@@ -57,7 +57,7 @@
     ],
     "paid": true
   },
-  "registrationEnabled": true,
+  "registrationEnabled": false,
   "time": "18:49-18:50",
   "date": "2026-10-28",
   "location": "테스트",
@@ -68,6 +68,6 @@
   ],
   "registrationEventId": "evt-5abc6065-2625-463f-a284-d9dc394c7e91",
   "description": "테스트",
-  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSeNlw-LOhNE7lBoqQOqkpqCZxnpNntdgnxd-HcmklOzZZdkLQ/viewform?usp=pp_url&entry.336968613=2026.10.28+%7C+%EC%88%98%EC%9D%B5+%EC%8B%A4%EB%AC%B4+%7C+%22%ED%85%8C%EC%8A%A4%ED%8A%B8%22",
+  "registrationForm": "",
   "category": "monetize"
 }
