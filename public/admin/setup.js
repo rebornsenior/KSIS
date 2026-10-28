@@ -159,10 +159,11 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   const RegistrationBuilderControl = window.createClass({
     config(){
       const raw=this.props.value?.toJS?this.props.value.toJS():this.props.value;
-      return {questions:Array.isArray(raw?.questions)?raw.questions:defaultRegistrationQuestions(),fees:Array.isArray(raw)?raw:(Array.isArray(raw?.fees)?raw.fees:(raw==null?defaultRegistrationFees():[]))};
+      const fees=Array.isArray(raw)?raw:(Array.isArray(raw?.fees)?raw.fees:[]);
+      return {questions:Array.isArray(raw?.questions)?raw.questions:defaultRegistrationQuestions(),fees,paid:typeof raw?.paid==='boolean'?raw.paid:fees.length>0};
     },
     render(){
-      const h=window.h,{questions,fees}=this.config();
+      const h=window.h,{questions,fees,paid}=this.config();
       const update=(key,next)=>this.props.onChange({...this.config(),[key]:next});
       const editQuestion=(index,patch)=>update('questions',questions.map((question,i)=>i===index?{...question,...patch}:question));
       const editFee=(index,patch)=>update('fees',fees.map((fee,i)=>i===index?{...fee,...patch}:fee));
@@ -183,23 +184,23 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
           h('button',{type:'button',onClick:()=>update('questions',[...questions,{id:'q-'+crypto.randomUUID(),type:'text',title:'',required:false}]),style:{marginTop:'12px'}},'질문 추가'),
           h('div',{style:{marginTop:'24px'}},h('strong',{},'등급별 참가비'),
         h('label',{style:{display:'flex',alignItems:'center',gap:'8px',fontWeight:600}},
-          h('input',{type:'checkbox',checked:fees.length>0,onChange:event=>update('fees',event.target.checked?(fees.length?fees:[{grade:'일반인',amount:'0',note:'',temporary:true}]):[])}),
+          h('input',{type:'checkbox',checked:paid,onChange:event=>this.props.onChange({...this.config(),paid:event.target.checked,fees:event.target.checked?(fees.length?fees:[{grade:'일반인',amount:'0',note:'',temporary:true}]):[]})}),
           '참가비를 받는 행사'),
-        ...fees.map((fee,index)=>h('div',{key:index,style:{padding:'12px',border:'1px solid #e2e8f0',borderRadius:'6px',marginTop:'8px'}},
+        ...(paid?fees:[]).map((fee,index)=>h('div',{key:index,style:{padding:'12px',border:'1px solid #e2e8f0',borderRadius:'6px',marginTop:'8px'}},
           h('input',{type:'text',value:fee.grade||'',placeholder:'회원 등급 또는 참가 유형','aria-label':(index+1)+'번 등급',onChange:event=>editFee(index,{grade:event.target.value}),style:inputStyle}),
           h('input',{type:'number',min:0,value:fee.amount??'',placeholder:'금액(원)','aria-label':(index+1)+'번 금액',onChange:event=>editFee(index,{amount:event.target.value}),style:{...inputStyle,marginTop:'8px'}}),
           h('input',{type:'text',value:fee.note||'',placeholder:'안내 사항 (예: 10회 무료, 이후 80% 할인)','aria-label':(index+1)+'번 안내',onChange:event=>editFee(index,{note:event.target.value}),style:{...inputStyle,marginTop:'8px'}}),
           h('button',{type:'button',onClick:()=>update('fees',fees.filter((_,i)=>i!==index)),style:{marginTop:'8px'}},'삭제'))),
-        fees.length>0 && h('button',{type:'button',onClick:()=>update('fees',[...fees,{grade:'',amount:'',note:''}]),style:{marginTop:'8px',padding:'8px 14px'}},h('span',{style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'20px',height:'20px',border:'1px solid currentColor',borderRadius:'50%',marginRight:'6px',fontWeight:700}},'+'),'등급·참가 유형 추가'),
-        fees.length>0 && h('button',{type:'button',onClick:()=>{const defaults=defaultRegistrationFees();const hasDefaults=defaults.every(base=>fees.some(fee=>fee.grade===base.grade));const withoutTemporary=fees.filter(fee=>!(fee.temporary || (fee.grade==='일반인' && String(fee.amount)==='0' && !fee.note)));update('fees',hasDefaults?withoutTemporary.filter(fee=>!defaults.some(base=>base.grade===fee.grade)):withoutTemporary.filter(fee=>!defaults.some(base=>base.grade===fee.grade)).concat(defaults));},style:{display:'block',marginTop:'14px'}},'기본 참가비 양식 불러오기'),
-        h('p',{style:{fontSize:'12px',color:'#64748b'}},fees.length?'등급명·금액·안내 사항이 Google Form에 표시됩니다.':'무료 행사는 참가비 안내 없이 신청을 받습니다.'))),
+        paid && h('button',{type:'button',onClick:()=>update('fees',[...fees,{grade:'',amount:'',note:''}]),style:{marginTop:'8px',padding:'8px 14px'}},h('span',{style:{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'20px',height:'20px',border:'1px solid currentColor',borderRadius:'50%',marginRight:'6px',fontWeight:700}},'+'),'등급·참가 유형 추가'),
+        paid && h('button',{type:'button',onClick:()=>{const defaults=defaultRegistrationFees();const hasDefaults=defaults.every(base=>fees.some(fee=>fee.grade===base.grade));const withoutTemporary=fees.filter(fee=>!(fee.temporary || (fee.grade==='일반인' && String(fee.amount)==='0' && !fee.note)));const custom=withoutTemporary.filter(fee=>!defaults.some(base=>fee.grade===base.grade && String(fee.amount)===base.amount && (fee.note||'')===base.note));update('fees',hasDefaults?(custom.length?custom:[{grade:'',amount:'',note:''}]):custom.concat(defaults));},style:{display:'block',marginTop:'14px'}},'기본 참가비 양식 불러오기'),
+        paid && h('p',{style:{fontSize:'12px',color:'#64748b'}},'등급명·금액·안내 사항이 Google Form에 표시됩니다.'))),
         h('div',{style:{...panelStyle,background:'#f8fafc'}},h('strong',{},'참가 신청용 Google Form 미리보기'),h('p',{style:{fontSize:'12px',color:'#64748b'}},'저장 후 생성될 Google Form의 항목 구성입니다. 입력·제출은 할 수 없습니다.'),
           h('div',{style:{...panelStyle,marginTop:'12px'}},'참가할 행사 *',h('p',{style:{color:'#94a3b8'}},'현재 일정')),
           ...questions.map((question,index)=>h('div',{key:question.id,style:{...panelStyle,marginTop:'12px'}},
             h('div',{},(question.title||'질문 제목')+(question.required!==false?' *':'')),
             question.help && h('p',{style:{fontSize:'12px',color:'#64748b'}},question.help),
             ['select','checkbox'].includes(question.type) ? h('ul',{},...(question.options||[]).filter(Boolean).map((option,i)=>h('li',{key:i},(question.type==='checkbox'?'□ ':'○ ')+option))) : h('p',{style:{color:'#94a3b8',fontSize:'13px'}},'내 답변'))),
-          fees.length>0 && h('div',{style:{...panelStyle,marginTop:'12px'}},h('strong',{},'회원 등급 / 참가 유형'),h('p',{style:{fontSize:'12px',color:'#64748b',marginTop:'6px'}},'본인의 등급을 선택하면 해당 참가비와 안내 사항을 확인할 수 있습니다.'),
+          paid && h('div',{style:{...panelStyle,marginTop:'12px'}},h('strong',{},'회원 등급 / 참가 유형'),h('p',{style:{fontSize:'12px',color:'#64748b',marginTop:'6px'}},'본인의 등급을 선택하면 해당 참가비와 안내 사항을 확인할 수 있습니다.'),
             h('select',{style:{width:'100%',padding:'10px',border:'1px solid #cbd5e1',borderRadius:'4px',marginTop:'8px'}},h('option',{},'선택해 주세요'),...(fees||[]).map((fee,index)=>h('option',{key:index},String(fee.grade||'등급')+' · '+String(fee.amount||'0')+'원'+(fee.note?' ('+fee.note+')':''))))),
 
         ));
@@ -257,7 +258,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     try {
       const participationFee=data.get('participationFee');
       const raw=participationFee?.toJS ? participationFee.toJS() : participationFee;
-      const feeRows=Array.isArray(raw) ? raw : (Array.isArray(raw?.fees) ? raw.fees : (raw==null ? defaultRegistrationFees() : []));
+      const feeRows=raw?.paid===false?[]:(Array.isArray(raw) ? raw : (Array.isArray(raw?.fees) ? raw.fees : []));
       const questions=Array.isArray(raw?.questions) ? raw.questions : defaultRegistrationQuestions();
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',participationFee:feeRows,registrationQuestions:questions,enabled});
       if(!enabled) {
@@ -288,7 +289,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     if(group==='calendar' && (!Array.isArray(data.rsvps) || !data.rsvps.length || data.rsvps.some(item=>typeof item!=='string' || !item.trim()))) message='참가 대상을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
     if(group==='calendar' && data.registrationEnabled===true) {
       const config=data.participationFee;
-      const fees=Array.isArray(config)?config:(Array.isArray(config?.fees) ? config.fees : (config==null ? defaultRegistrationFees() : []));
+      const fees=config?.paid===false?[]:(Array.isArray(config)?config:(Array.isArray(config?.fees) ? config.fees : []));
       const questions=Array.isArray(config?.questions)?config.questions:defaultRegistrationQuestions();
       if(fees.some(item=>!String(item?.grade || '').trim() || String(item?.amount ?? '').trim()==='' || !Number.isFinite(Number(item.amount)) || Number(item.amount)<0)) message='참가비 등급과 금액을 입력해 주세요. 빈 입력칸은 채우거나 삭제해 주세요.';
       if(questions.length>20 || questions.some(item=>!String(item?.title || '').trim() || !['text','paragraph','select','checkbox'].includes(item?.type) || (['select','checkbox'].includes(item.type) && (!Array.isArray(item.options) || item.options.some(option=>!String(option).trim()) || item.options.length<2)))) message='신청 질문의 제목과 선택지를 확인해 주세요. 선택형 질문에는 두 개 이상의 선택지가 필요합니다.';
