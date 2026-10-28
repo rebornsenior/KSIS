@@ -22,3 +22,10 @@ test('deleting a legacy draft closes the actual Google event rather than the sta
   const f=fixture();await f.close({entry:f.entry({...linked,registrationEventId:'evt-d829e7c9-231a-47e0-9244-7b5a256f1231'})});
   assert.equal(f.calls[0].eventId,'evt-976cd8e1-1c7e-46f6-b9e8-e04a115fe169');
 });
+
+test('repeated cleanup in the same editor reuses confirmed closure',async()=>{
+  const f=fixture();
+  await f.close({entry:f.entry(linked)});
+  await f.close({entry:f.entry({...linked,registrationEnabled:false})});
+  assert.equal(f.calls.length,1);
+});

@@ -20,6 +20,11 @@ function ksisSyncPerEvent_(request,email) {
     const year=request.date.slice(0,4), month=request.date.slice(5,7);
     if(!request.enabled) {
       if(event?.structure==='per-event') {
+        // A confirmed closure must remain retryable even when the trashed file
+        // can no longer be retrieved by Drive for the current caller.
+        if(event.enabled===false && event.trashed===true) {
+          return {eventId:request.eventId,disabled:true,year,schemaVersion:4};
+        }
         const file=DriveApp.getFileById(event.formId);
         if(!file.isTrashed()) {
           FormApp.openById(event.formId).setAcceptingResponses(false);

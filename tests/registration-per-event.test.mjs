@@ -83,3 +83,13 @@ test('editable questions and fee notes update the same event form without duplic
   assert.equal(f.event('event-1').questionItems['q-attend'],undefined);
   assert.equal(f.event('event-1').feeItemId,undefined);
 });
+
+test('confirmed closure succeeds on retry even if Drive no longer exposes the trashed form',()=>{
+  const f=fixture();f.run(request);
+  const event=f.event('event-1');
+  f.run({...request,enabled:false});
+  f.files.delete(event.formId);
+  const result=f.run({...request,enabled:false});
+  assert.equal(result.disabled,true);
+  assert.equal(result.eventId,request.eventId);
+});

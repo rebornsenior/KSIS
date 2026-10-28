@@ -224,6 +224,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
   });
   CMS.registerWidget('registration-roster',RegistrationRosterControl);
   let pendingRegistrationId=null;
+  const confirmedClosedRegistrations=new Set();
   window.addEventListener('hashchange',()=>{pendingRegistrationId=null;});
   // Confirmed from the form's label ownership record on 2026-10-16.
   // Repair older workflow drafts too, without changing the form or its responses.
@@ -263,12 +264,14 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,category:data.get('category') || 'other',participationFee:feeRows,registrationQuestions:questions,enabled});
       if(!enabled) {
         if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==4) throw new Error('INVALID_SYNC_RESULT');
+        confirmedClosedRegistrations.add(eventId);
         return data.set('registrationForm','').delete('registrationRefreshRequested');
       }
       if(result?.schemaVersion!==4 || result?.labelVersion!==2) throw new Error('REGISTRATION_CODE_OUTDATED');
       let url;
       try {url=new URL(result?.registrationForm);} catch {throw new Error('INVALID_SYNC_RESULT');}
       if(result.eventId!==eventId || result.year!==date.slice(0,4) || url.protocol!=='https:' || url.hostname!=='docs.google.com' || !/^\/forms\/d\//.test(url.pathname)) throw new Error('INVALID_SYNC_RESULT');
+      confirmedClosedRegistrations.delete(eventId);
       return data.set('registrationForm',url.href).set('registrationEventId',result.eventId).set('registrationYear',result.year).delete('registrationRefreshRequested');
     } catch(error) {
       const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 연결을 다시 진행하려면 신청받기를 끈 뒤 다시 켜 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION' || error.message==='REGISTRATION_CODE_OUTDATED'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
@@ -328,8 +331,10 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
     const eventId=await registrationIdFor(entry,data,false),title=data.get('title'),date=data.get('date');
     try {
       if(!eventId || !title || !date) throw new Error('MISSING_REGISTRATION_METADATA');
+      if(confirmedClosedRegistrations.has(eventId)) return;
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,enabled:false});
       if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==4) throw new Error('CLOSE_NOT_CONFIRMED');
+      confirmedClosedRegistrations.add(eventId);
     } catch(error) {
       window.alert('구글 폼의 행사 접수를 닫지 못해 일정 삭제를 중단했습니다. 구글 계정을 연결한 뒤 다시 삭제해 주세요. ('+error.message+')');
       throw error;
