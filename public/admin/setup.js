@@ -274,7 +274,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       confirmedClosedRegistrations.delete(eventId);
       return data.set('registrationForm',url.href).set('registrationEventId',result.eventId).set('registrationYear',result.year).delete('registrationRefreshRequested');
     } catch(error) {
-      const reason=['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 연결을 다시 진행하려면 신청받기를 끈 뒤 다시 켜 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION' || error.message==='REGISTRATION_CODE_OUTDATED'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
+      const reason=error.message==='API_DEPLOYMENT_NOT_ACCESSIBLE'?'구글 신청 관리 API 배포를 찾거나 실행할 수 없습니다. Apps Script 배포 ID와 실행 접근 권한을 확인해 주세요.':error.message==='API_EXECUTION_FORBIDDEN'?'현재 구글 계정으로 신청 관리 API를 실행할 수 없습니다. 배포 접근 설정과 Google Cloud 프로젝트 연결을 확인해 주세요.':['POPUP_BLOCKED','LOGIN_TIMEOUT','GOOGLE_NOT_READY','LOGIN_CANCELLED'].includes(error.message)?'구글 연결을 다시 진행하려면 신청받기를 끈 뒤 다시 켜 주세요.':error.message==='EVENT_LABEL_CONFLICT'?'기존 구글 폼의 행사 연결 정보와 충돌했습니다. 제목은 바꾸지 말고 연결 정보를 확인해 주세요.':error.message==='EVENT_YEAR_CHANGED'?'이미 연결한 행사의 연도가 바뀌었습니다. 기존 신청 명단을 보존하기 위해 자동 이동을 중단했습니다.':error.message==='AUTOMATION_NOT_CONFIGURED' || error.message==='INVALID_ACTION' || error.message==='REGISTRATION_CODE_OUTDATED'?'구글 연결 코드 업데이트가 먼저 필요합니다.':'구글 연결을 완료하지 못했습니다. ('+error.message+')';
       window.alert(reason+' 일정 저장을 중단했습니다. 다시 시도해 주세요.');
       throw error;
     }
@@ -336,7 +336,7 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==4) throw new Error('CLOSE_NOT_CONFIRMED');
       confirmedClosedRegistrations.add(eventId);
     } catch(error) {
-      window.alert('구글 폼의 행사 접수를 닫지 못해 일정 삭제를 중단했습니다. 구글 계정을 연결한 뒤 다시 삭제해 주세요. ('+error.message+')');
+      window.alert(error.message==='API_DEPLOYMENT_NOT_ACCESSIBLE'?'구글 신청 관리 API 배포에 접근할 수 없어 작업을 중단했습니다. 폼 삭제 문제가 아니라 Apps Script 배포 ID·실행 접근 권한 확인이 필요합니다.':'구글 폼의 행사 접수를 닫지 못해 작업을 중단했습니다. 구글 연결과 해당 폼의 접근 권한을 확인해 주세요. ('+error.message+')');
       throw error;
     }
   };

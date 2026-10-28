@@ -54,7 +54,12 @@ window.KSISRegistration = (() => {
     const result=await response.json();
     if(!response.ok || result.error) {
       if(response.status===401) credential=null;
-      const message=String(result.error?.details?.[0]?.errorMessage || result.error?.status || 'CONNECTION_FAILED');
+      const executionError=result.error?.details?.find(detail=>typeof detail.errorMessage==='string');
+      // HTTP-level failures happen before the function runs. Never confuse a
+      // missing/inaccessible API deployment with a missing event form.
+      if(!executionError && response.status===404) throw new Error('API_DEPLOYMENT_NOT_ACCESSIBLE');
+      if(!executionError && response.status===403) throw new Error('API_EXECUTION_FORBIDDEN');
+      const message=String(executionError?.errorMessage || result.error?.status || 'CONNECTION_FAILED');
       const codes=['AUTOMATION_NOT_CONFIGURED','INVALID_ACTION','FORBIDDEN','EVENT_YEAR_CHANGED','EVENT_LABEL_CONFLICT','INVALID_EVENT_DATE','INVALID_EVENT_TITLE','INVALID_EVENT_CATEGORY','PERMISSION_DENIED','UNAUTHENTICATED','NOT_FOUND','TRASH_NOT_CONFIRMED','FORM_FOLDER_TRASHED','REGISTRATION_CODE_OUTDATED'];
       throw new Error(codes.find(code=>message.includes(code)) || 'CONNECTION_FAILED');
     }
