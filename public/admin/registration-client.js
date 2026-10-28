@@ -43,7 +43,7 @@ window.KSISRegistration = (() => {
   async function call(request) {
     if(request.action==='sync' && request.formStructure==='per-event') {
       const capabilities=await call({action:'capabilities'});
-      if(capabilities?.schemaVersion!==3)throw new Error('REGISTRATION_CODE_OUTDATED');
+      if(capabilities?.schemaVersion!==4)throw new Error('REGISTRATION_CODE_OUTDATED');
     }
     await authorize();
     const response=await fetch('https://script.googleapis.com/v1/scripts/AKfycbzY5SuG65FqgonF8sFzCGTvRyuuiU85hVjhM0uUShDvjWf50TejSzMtmYEWob3DxQBH7w:run',{

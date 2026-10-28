@@ -98,7 +98,7 @@ class CmsData {
 const cmsSource=readFileSync(new URL('../public/admin/setup.js',import.meta.url),'utf8');
 function editorFor(backend) {
   const hooks={};
-  const context={localMode:true,URL,TextEncoder,Uint8Array,crypto:webcrypto,
+  const context={localMode:true,URL,TextEncoder,Uint8Array,crypto:webcrypto,defaultRegistrationQuestions:()=>[],
     CMS:{registerEventListener:({name,handler})=>{hooks[name]=handler;}},
     window:{addEventListener(){},alert(){},KSISRegistration:{call:async request=>backend.run(request)}}};
   vm.runInNewContext(cmsSource.slice(cmsSource.indexOf('  let pendingRegistrationId='),cmsSource.indexOf('  const alignField =')),context);

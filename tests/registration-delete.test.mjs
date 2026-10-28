@@ -7,7 +7,7 @@ const start=source.indexOf('  const closeCalendarRegistration=');
 const end=source.indexOf("  CMS.registerEventListener({name:'preUnpublish'",start);
 function fixture({fail=false,confirmed=true}={}) {
   const calls=[],alerts=[];
-  const context={window:{addEventListener(){},alert:message=>alerts.push(message),KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return {eventId:request.eventId,schemaVersion:3,disabled:confirmed};}}}};
+  const context={window:{addEventListener(){},alert:message=>alerts.push(message),KSISRegistration:{call:async request=>{calls.push(request);if(fail)throw Error('FORBIDDEN');return {eventId:request.eventId,schemaVersion:4,disabled:confirmed};}}}};
   vm.runInNewContext(source.slice(source.indexOf('  let pendingRegistrationId='),source.indexOf('  const boardValidation='))+source.slice(start,end)+'\nthis.close=closeCalendarRegistration;',context);
   const entry=(data={},collection='calendar')=>({get:key=>key==='collection'?collection:{get:key=>data[key]}});
   return {close:context.close,calls,alerts,entry};

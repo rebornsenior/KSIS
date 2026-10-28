@@ -11,7 +11,7 @@ function ksisRegistration(request) {
   if (request.action === 'capabilities') {
     const access=JSON.parse(PropertiesService.getScriptProperties().getProperty('KSIS_AUTOMATION') || '{}');
     if(!(access.managers || []).includes(email))throw new Error('FORBIDDEN');
-    return {schemaVersion:3};
+    return {schemaVersion:4};
   }
   if (request.action === 'sync') return request.formStructure==='per-event' ? ksisSyncPerEvent_(request,email) : ksisSyncEvent_(request, email);
   if (typeof request.eventId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(request.eventId)) throw new Error('INVALID_EVENT_ID');
@@ -181,7 +181,7 @@ function ksisSyncEvent_(request, email) {
 function ksisEventInfo_(eventId,event,form) {
   const item = form.getItemById(Number(event.eventItemId)).asListItem();
   const url = form.createResponse().withItemResponse(item.createResponse(event.eventValue)).toPrefilledUrl();
-  return {eventId,title:event.title || event.eventValue,date:event.date || '',year:event.year || '',category:event.category || '',labelVersion:event.labelVersion || 1,...(event.structure==='per-event'?{schemaVersion:3,structure:'per-event',month:event.month}:{}),registrationForm:url};
+  return {eventId,title:event.title || event.eventValue,date:event.date || '',year:event.year || '',category:event.category || '',labelVersion:event.labelVersion || 1,...(event.structure==='per-event'?{schemaVersion:4,structure:'per-event',month:event.month}:{}),registrationForm:url};
 }
 
 function ksisChoiceKey_(formId,value) {

@@ -14,8 +14,8 @@ function fixture(){
     const formId='form-'+(++id),items=[];
     const file={trashed:false,getId:()=>formId,isTrashed(){return this.trashed;},setTrashed(value){if(failTrash)throw Error('TRASH_FAILED');this.trashed=value;return this;},moveTo(folder){if(failMove)throw Error('MOVE_FAILED');this.parent=folder.getId();return this;},setName(name){this.name=name;return this;}};files.set(formId,file);
     const form={id:formId,title,responses:[],accepting:false,getId:()=>formId,getItems:()=>items,getItemById:key=>items.find(item=>item.id===String(key)),
-      add(type){const item={id:String(++id),type,title:'',choices:[],getId(){return this.id;},getType(){return this.type;},getTitle(){return this.title;},setTitle(value){this.title=value;return this;},setRequired(){return this;},asListItem(){return this;},setChoiceValues(values){if(failChoice)throw Error('CHOICE_FAILED');this.choices=values;return this;},getChoices(){return this.choices.map(value=>({getValue:()=>value}));},createResponse:value=>({value})};items.push(item);return item;},
-      addListItem(){return this.add('LIST');},addTextItem(){return this.add('TEXT');},setTitle(value){this.title=value;},setDescription(){},setCollectEmail(){},setLimitOneResponsePerUser(){},setPublishingSummary(){},setPublished(){},setAcceptingResponses(value){this.accepting=value;},
+      add(type){const item={id:String(++id),type,title:'',choices:[],getId(){return this.id;},getType(){return this.type;},getTitle(){return this.title;},setTitle(value){this.title=value;return this;},setHelpText(value){this.help=value;return this;},setRequired(value){this.required=value;return this;},asListItem(){return this;},asTextItem(){return this;},asParagraphTextItem(){return this;},asCheckboxItem(){return this;},setChoiceValues(values){if(failChoice)throw Error('CHOICE_FAILED');this.choices=values;return this;},getChoices(){return this.choices.map(value=>({getValue:()=>value}));},createResponse:value=>({value})};items.push(item);return item;},
+      addListItem(){return this.add('LIST');},addTextItem(){return this.add('TEXT');},addParagraphTextItem(){return this.add('PARAGRAPH_TEXT');},addCheckboxItem(){return this.add('CHECKBOX');},deleteItem(item){items.splice(items.indexOf(item),1);},setTitle(value){this.title=value;},setDescription(value){this.description=value;},setCollectEmail(){},setLimitOneResponsePerUser(){},setPublishingSummary(){},setPublished(){},setAcceptingResponses(value){this.accepting=value;},
       getResponses(){return this.responses;},getResponse(key){return this.responses.find(r=>r.getId()===key);},deleteResponse(key){this.responses=this.responses.filter(r=>r.getId()!==key);},createResponse(){return {withItemResponse(){return this;},toPrefilledUrl:()=>`https://docs.google.com/forms/d/${formId}/viewform`};}};forms.set(formId,form);return form;
   }
   const ctx={console,PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties.get(key)||null,setProperty:(key,value)=>properties.set(key,value)})},Session:{getActiveUser:()=>({getEmail:()=>email})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},FormApp:{create:createForm,openById:key=>{if(!forms.has(key)||files.get(key).trashed)throw Error('FORM_UNAVAILABLE');return forms.get(key);}},DriveApp:{createFolder:name=>folder(name,null),getFolderById:key=>folders.get(key),getFileById:key=>files.get(key)}};
@@ -29,7 +29,7 @@ function fixture(){
 }
 const request={action:'sync',formStructure:'per-event',eventId:'event-1',title:'행사',date:'2027-01-15',category:'forum',enabled:true};
 test('per-event forms use year/month folders and prepare all 12 months; retries and edits reuse the form',()=>{
-  const f=fixture();const info=f.run(request);assert.equal(info.schemaVersion,3);
+  const f=fixture();const info=f.run(request);assert.equal(info.schemaVersion,4);
   assert.equal(f.forms.size,1);assert.equal(f.folders.size,14);
   const event=f.event('event-1'),file=f.files.get(event.formId);assert.equal(f.folders.get(file.parent).name,'01월');
   f.run({...request,title:'수정 행사',date:'2028-02-20'});assert.equal(f.forms.size,1);assert.equal(f.event('event-1').formId,event.formId);assert.equal(f.folders.get(file.parent).name,'02월');
@@ -57,4 +57,29 @@ test('migration preserves shared form and old roster, removes only the old choic
   const roster=f.run({action:'list',eventId:'event-1'}).records;assert.equal(roster.length,2);
   const old=roster.find(r=>r.id==='1:old-response');assert.ok(old);
   f.run({action:'delete',eventId:'event-1',responseId:old.id,confirmDelete:true,expectedName:old.name,expectedSubmittedAt:old.submittedAt});assert.equal(form.responses.length,0);assert.equal(f.forms.get(current.formId).responses.length,1);
+});
+
+test('editable questions and fee notes update the same event form without duplicating items',()=>{
+  const f=fixture();
+  const questions=[
+    {id:'name',type:'text',title:'성함',required:true,help:''},
+    {id:'phone',type:'text',title:'연락처',required:true,help:''},
+    {id:'payer',type:'text',title:'입금자명',required:false,help:'무료라면 비워 두세요'},
+    {id:'q-attend',type:'checkbox',title:'참석 시간',required:true,options:['오전','오후'],help:'복수 선택 가능'},
+  ];
+  f.run({...request,registrationQuestions:questions,participationFee:[{grade:'플래티넘',amount:0,note:'10회 무료, 이후 1만 원'}]});
+  const event=f.event('event-1'),form=f.forms.get(event.formId);
+  assert.equal(form.getItemById(event.nameItemId).title,'성함');
+  assert.equal(form.getItemById(event.payerItemId).required,false);
+  assert.equal(form.getItemById(event.questionItems['q-attend'].itemId).type,'CHECKBOX');
+  assert.deepEqual(form.getItemById(event.questionItems['q-attend'].itemId).choices,['오전','오후']);
+  assert.match(form.description,/플래티넘: 0원 \(10회 무료, 이후 1만 원\)/);
+  assert.match(form.getItemById(event.feeItemId).choices[0],/10회 무료/);
+  const before=form.getItems().length;
+  f.run({...request,registrationQuestions:questions,participationFee:[{grade:'플래티넘',amount:0,note:'10회 무료, 이후 1만 원'}]});
+  assert.equal(form.getItems().length,before);
+  f.run({...request,registrationQuestions:questions.slice(0,3),participationFee:[]});
+  assert.equal(form.getItems().length,before-2);
+  assert.equal(f.event('event-1').questionItems['q-attend'],undefined);
+  assert.equal(f.event('event-1').feeItemId,undefined);
 });

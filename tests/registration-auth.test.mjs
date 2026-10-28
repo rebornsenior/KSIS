@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 const source=readFileSync(new URL('../public/admin/registration-client.js',import.meta.url),'utf8');
-function fixture(mode,schemaVersion=3) {
+function fixture(mode,schemaVersion=4) {
   const timers=[];let popups=0,calls=0;
   const context={location:{origin:'https://www.rebornsenior.com'},window:{google:{accounts:{oauth2:{initTokenClient:options=>({requestAccessToken(){popups++;if(mode==='blocked')options.error_callback({type:'popup_failed_to_open'});if(mode==='success')options.callback({access_token:'test-credential',expires_in:3600});}})}}}},document:{},AbortSignal,setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout(){},fetch:async()=>{calls++;return {ok:true,json:async()=>({response:{result:{ready:true,schemaVersion}}})};}};
   vm.runInNewContext(source,context);
@@ -17,7 +17,7 @@ test('per-event requests check backend version before mutation and reject an old
   const old=fixture('success',2);
   await assert.rejects(old.api.call({action:'sync',formStructure:'per-event'}),/REGISTRATION_CODE_OUTDATED/);
   assert.equal(old.calls(),1);
-  const current=fixture('success',3);
+  const current=fixture('success',4);
   await current.api.call({action:'sync',formStructure:'per-event'});
   assert.equal(current.calls(),2);assert.equal(current.popups(),1);
 });

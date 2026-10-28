@@ -10,6 +10,8 @@ function ksisSyncPerEvent_(request,email) {
   if(typeof request.date!=='string' || !/^20\d{2}-\d{2}-\d{2}$/.test(request.date) || new Date(request.date+'T00:00:00Z').toISOString().slice(0,10)!==request.date) throw new Error('INVALID_EVENT_DATE');
   const labels={forum:'정기 포럼',education:'교육 특강',monetize:'수익 실무',other:'친목 소모임'};
   if(request.category!==undefined && !Object.prototype.hasOwnProperty.call(labels,request.category)) throw new Error('INVALID_EVENT_CATEGORY');
+  const feeRows=ksisNormalizeFees_(request.participationFee);
+  const questions=ksisNormalizeQuestions_(request.registrationQuestions);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
   try {
     const config=JSON.parse(store.getProperty('KSIS_REGISTRATION') || '{}');
@@ -31,7 +33,7 @@ function ksisSyncPerEvent_(request,email) {
         ksisRetireAnnual_(event,request.eventId,store);
         event.enabled=false;store.setProperty(key,JSON.stringify(event));
       }
-      return {eventId:request.eventId,disabled:true,year,schemaVersion:3};
+      return {eventId:request.eventId,disabled:true,year,schemaVersion:4};
     }
     if(!event || event.structure!=='per-event') {
       const archives=event ? [event] : [];
@@ -47,26 +49,37 @@ function ksisSyncPerEvent_(request,email) {
     file.moveTo(folder);
     file.setName(ksisFormTitle_(request.date,request.title));
     form.setTitle(ksisFormTitle_(request.date,request.title));
-    const fields=[['eventItemId','참가할 행사','LIST'],['nameItemId','신청자 이름','TEXT'],['phoneItemId','전화번호','TEXT'],['payerItemId','입금자명','TEXT']];
-    for(const [field,title,type] of fields) {
-      if(event[field])continue;
-      const matches=form.getItems().filter(item=>item.getTitle()===title && String(item.getType())===type);
+    const eventItemTitle='참가할 행사';
+    if(!event.eventItemId) {
+      const matches=form.getItems().filter(item=>item.getTitle()===eventItemTitle && String(item.getType())==='LIST');
       if(matches.length>1)throw new Error('AMBIGUOUS_FORM_ITEMS');
-      const item=matches[0] || (type==='LIST'?form.addListItem():form.addTextItem()).setTitle(title).setRequired(true);
-      event[field]=String(item.getId());store.setProperty(key,JSON.stringify(event));
+      const item=matches[0] || form.addListItem().setTitle(eventItemTitle).setRequired(true);
+      event.eventItemId=String(item.getId());store.setProperty(key,JSON.stringify(event));
     }
+    const core=[['name','nameItemId','신청자 이름'],['phone','phoneItemId','전화번호'],['payer','payerItemId','입금자명']];
+    for(const [id,field,legacyTitle] of core) {
+      const question=questions.find(item=>item.id===id);
+      if(!event[field]) {
+        const matches=form.getItems().filter(item=>item.getTitle()===legacyTitle && String(item.getType())==='TEXT');
+        if(matches.length>1)throw new Error('AMBIGUOUS_FORM_ITEMS');
+        const item=matches[0] || form.addTextItem();
+        event[field]=String(item.getId());store.setProperty(key,JSON.stringify(event));
+      }
+      form.getItemById(Number(event[field])).asTextItem().setTitle(question.title).setHelpText(question.help).setRequired(question.required);
+    }
+    ksisSyncExtraQuestions_(form,event,questions,store,key);
+    ksisSyncFeeItem_(form,event,feeRows,store,key);
     const category=request.category || event.category || 'other';
-    const feeRows=ksisNormalizeFees_(request.participationFee);
     const label=request.date.replace(/-/g,'.')+' | '+labels[category]+' | '+JSON.stringify(request.title.trim());
     event.previousValues=Array.from(new Set([...(event.previousValues || []),event.eventValue].filter(value=>value && value!==label)));
-    event.eventValue=label;event.year=year;event.month=month;event.date=request.date;event.title=request.title.trim();event.category=category;event.participationFee=feeRows;event.labelVersion=2;event.folderId=folder.getId();
+    event.eventValue=label;event.year=year;event.month=month;event.date=request.date;event.title=request.title.trim();event.category=category;event.participationFee=feeRows;event.registrationQuestions=questions;event.labelVersion=2;event.folderId=folder.getId();
     store.setProperty(key,JSON.stringify(event));
     form.getItemById(Number(event.eventItemId)).asListItem().setChoiceValues([label]);
     for(const old of event.archivedForms || []) {
       if(old.enabled!==false){ksisRetireAnnual_(old,request.eventId,store);old.enabled=false;}
     }
-    const feeText=feeRows.length ? '\n\n참가비 안내\n'+feeRows.map(row=>'- '+row.grade+': '+row.amount.toLocaleString('ko-KR')+'원').join('\n') : '\n\n참가비가 없는 행사입니다.';
-  form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.'+feeText);
+    const feeText=feeRows.length ? '\n\n참가비 안내\n'+feeRows.map(row=>'- '+row.grade+': '+row.amount.toLocaleString('ko-KR')+'원'+(row.note?' ('+row.note+')':'')).join('\n') : '\n\n참가비가 없는 행사입니다.';
+    form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.'+feeText);
     form.setCollectEmail(false);form.setLimitOneResponsePerUser(false);form.setPublishingSummary(false);
     form.setPublished(true);form.setAcceptingResponses(true);
     event.enabled=true;event.trashed=false;event.ready=true;
@@ -77,7 +90,73 @@ function ksisSyncPerEvent_(request,email) {
 
 function ksisNormalizeFees_(value) {
   if(!Array.isArray(value)) return [];
-  return value.map(row=>({grade:String(row && row.grade || '').trim(),amount:Number(row && row.amount)})).filter(row=>row.grade && Number.isFinite(row.amount) && row.amount>=0 && row.amount<=100000000).slice(0,20);
+  if(value.length>20)throw new Error('TOO_MANY_FEES');
+  return value.map(row=>{
+    const grade=String(row?.grade || '').trim(),raw=String(row?.amount ?? '').trim(),amount=Number(raw),note=String(row?.note || '').trim();
+    if(!grade || grade.length>100 || raw==='' || !Number.isFinite(amount) || amount<0 || amount>100000000 || note.length>300)throw new Error('INVALID_FEE');
+    return {grade,amount,note};
+  });
+}
+function ksisNormalizeQuestions_(value) {
+  const defaults=[{id:'name',type:'text',title:'신청자 이름',required:true},{id:'phone',type:'text',title:'전화번호',required:true},{id:'payer',type:'text',title:'입금자명',required:false}];
+  if(value===undefined || value===null)return defaults.map(item=>({...item,help:'',options:[]}));
+  if(!Array.isArray(value) || value.length<3 || value.length>20)throw new Error('INVALID_QUESTIONS');
+  const seen=new Set();
+  const questions=value.map(item=>{
+    const id=String(item?.id || ''),type=String(item?.type || ''),title=String(item?.title || '').trim(),help=String(item?.help || '').trim();
+    const required=item?.required!==false;
+    if(!/^(?:name|phone|payer|q-[a-zA-Z0-9-]{1,70})$/.test(id) || seen.has(id) || !['text','paragraph','select','checkbox'].includes(type) || !title || title.length>150 || help.length>500)throw new Error('INVALID_QUESTIONS');
+    seen.add(id);
+    if(['name','phone','payer'].includes(id) && (type!=='text' || ((id==='name' || id==='phone') && !required)))throw new Error('INVALID_CORE_QUESTION');
+    const options=['select','checkbox'].includes(type) ? item.options : [];
+    if(!Array.isArray(options) || options.length>30 || (['select','checkbox'].includes(type) && options.length<2))throw new Error('INVALID_QUESTION_OPTIONS');
+    const cleanOptions=options.map(option=>String(option).trim());
+    if(cleanOptions.some(option=>!option || option.length>150) || new Set(cleanOptions).size!==cleanOptions.length)throw new Error('INVALID_QUESTION_OPTIONS');
+    return {id,type,title,help,required,options:cleanOptions};
+  });
+  if(defaults.some(item=>!seen.has(item.id)))throw new Error('MISSING_CORE_QUESTION');
+  return questions;
+}
+function ksisSyncExtraQuestions_(form,event,questions,store,key) {
+  const saved=event.questionItems || {};
+  const extras=questions.filter(item=>!['name','phone','payer'].includes(item.id));
+  const ids=new Set(extras.map(item=>item.id));
+  for(const id of Object.keys(saved)) {
+    if(ids.has(id))continue;
+    const old=form.getItems().find(item=>String(item.getId())===String(saved[id].itemId));
+    if(old)form.deleteItem(old);
+    delete saved[id];event.questionItems=saved;store.setProperty(key,JSON.stringify(event));
+  }
+  const types={text:'TEXT',paragraph:'PARAGRAPH_TEXT',select:'LIST',checkbox:'CHECKBOX'};
+  const create={text:()=>form.addTextItem(),paragraph:()=>form.addParagraphTextItem(),select:()=>form.addListItem(),checkbox:()=>form.addCheckboxItem()};
+  for(const question of extras) {
+    let mapping=saved[question.id];
+    let item=mapping && form.getItems().find(found=>String(found.getId())===String(mapping.itemId));
+    if(item && String(item.getType())!==types[question.type]) {
+      form.deleteItem(item);item=null;delete saved[question.id];store.setProperty(key,JSON.stringify(event));
+    }
+    if(!item) {
+      item=create[question.type]();saved[question.id]={itemId:String(item.getId()),type:question.type};
+      event.questionItems=saved;store.setProperty(key,JSON.stringify(event));
+    }
+    item=question.type==='text'?item.asTextItem():question.type==='paragraph'?item.asParagraphTextItem():question.type==='select'?item.asListItem():item.asCheckboxItem();
+    item.setTitle(question.title).setHelpText(question.help).setRequired(question.required);
+    if(question.type==='select' || question.type==='checkbox')item.setChoiceValues(question.options);
+  }
+  event.questionItems=saved;
+}
+function ksisSyncFeeItem_(form,event,fees,store,key) {
+  let item=event.feeItemId && form.getItems().find(found=>String(found.getId())===String(event.feeItemId));
+  if(!fees.length) {
+    if(item)form.deleteItem(item);
+    delete event.feeItemId;store.setProperty(key,JSON.stringify(event));return;
+  }
+  if(!item) {
+    item=form.addListItem();event.feeItemId=String(item.getId());store.setProperty(key,JSON.stringify(event));
+  }
+  item=item.asListItem();
+  item.setTitle('회원 등급 / 참가 유형').setHelpText('본인의 등급을 선택하면 해당 참가비와 안내 사항을 확인할 수 있습니다.').setRequired(true);
+  item.setChoiceValues(fees.map(fee=>fee.grade+' · '+fee.amount.toLocaleString('ko-KR')+'원'+(fee.note?' ('+fee.note+')':'')));
 }
 function ksisFormTitle_(date,title) {
   return date+' | '+JSON.stringify(String(title).trim())+' 참가신청';
@@ -117,6 +196,3 @@ function ksisRetireAnnual_(event,eventId,store) {
     if(registry){registry.inactiveValues=Array.from(new Set([...(registry.inactiveValues || []),...old]));store.setProperty(key,JSON.stringify(registry));}
   }
 }
-
-
-
