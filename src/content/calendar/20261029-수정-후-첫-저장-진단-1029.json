@@ -1,0 +1,70 @@
+{
+  "participationFee": {
+    "questions": [
+      {
+        "id": "name",
+        "type": "text",
+        "title": "신청자 이름",
+        "required": true
+      },
+      {
+        "id": "phone",
+        "type": "text",
+        "title": "전화번호",
+        "required": true
+      },
+      {
+        "id": "payer",
+        "type": "text",
+        "title": "입금자명",
+        "required": false
+      }
+    ],
+    "fees": [
+      {
+        "grade": "플래티넘 회원",
+        "amount": "10000",
+        "note": "10회 무료(이후 1만원/80% 할인)"
+      },
+      {
+        "grade": "골드 회원",
+        "amount": "15000",
+        "note": "5회 무료(이후 1만5천원/70% 할인)"
+      },
+      {
+        "grade": "실버 회원",
+        "amount": "25000",
+        "note": "2회 무료(이후 2만5천원/50% 할인)"
+      },
+      {
+        "grade": "브론즈 회원",
+        "amount": "35000",
+        "note": "30% 할인"
+      },
+      {
+        "grade": "추천동반인",
+        "amount": "20000",
+        "note": ""
+      },
+      {
+        "grade": "일반인",
+        "amount": "50000",
+        "note": ""
+      }
+    ],
+    "paid": true
+  },
+  "registrationEnabled": true,
+  "time": "10:00 - 11:00",
+  "date": "2026-11-07",
+  "location": "기능 확인용",
+  "registrationYear": "2026",
+  "title": "수정 후 첫 저장 진단 1029",
+  "rsvps": [
+    "기능 확인용"
+  ],
+  "registrationEventId": "evt-7816376b-09b6-4a65-b09e-f82283468379",
+  "description": "버전12 완전 신규 폼의 첫 저장 검증",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSeh9gT8U6puRnTLZbr9eREuYDA2kUDhVi4VL6XfTon1Ip6j2A/viewform?usp=pp_url&entry.1586886414=2026.11.07+%7C+%EC%88%98%EC%9D%B5+%EC%8B%A4%EB%AC%B4+%7C+%22%EC%88%98%EC%A0%95+%ED%9B%84+%EC%B2%AB+%EC%A0%80%EC%9E%A5+%EC%A7%84%EB%8B%A8+1029%22",
+  "category": "monetize"
+}
