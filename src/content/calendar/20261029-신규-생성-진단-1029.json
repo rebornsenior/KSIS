@@ -1,0 +1,15 @@
+{
+  "registrationEnabled": true,
+  "time": "10:00 - 11:00",
+  "date": "2026-11-07",
+  "location": "기능 확인용",
+  "registrationYear": "2026",
+  "title": "신규 생성 진단 1029",
+  "rsvps": [
+    "기능 확인용"
+  ],
+  "registrationEventId": "evt-98d3a420-9773-4232-a651-3c465b836b97",
+  "description": "신규 신청서 생성 오류 진단용 초안",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSeuZVn6cNTXk5uLjwrCGptde6onLugM8K1o2pFme2AfV9eiNg/viewform?usp=pp_url&entry.1731168883=2026.11.07+%7C+%EC%B9%9C%EB%AA%A9+%EC%86%8C%EB%AA%A8%EC%9E%84+%7C+%22%EC%8B%A0%EA%B7%9C+%EC%83%9D%EC%84%B1+%EC%A7%84%EB%8B%A8+1029%22",
+  "category": "other"
+}
