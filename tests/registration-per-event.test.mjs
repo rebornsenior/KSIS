@@ -12,10 +12,16 @@ function fixture(){
   function folder(name,parent){const item={id:'folder-'+(++id),name,parent,isTrashed:()=>false,getId(){return this.id;},createFolder(name){return folder(name,this.id);},getFoldersByName(name){return iterator([...folders.values()].filter(f=>f.parent===this.id&&f.name===name));}};folders.set(item.id,item);return item;}
   function createForm(title){
     const formId='form-'+(++id),items=[];
+    const generic=item=>item && Object.assign(Object.create(item),{
+      asListItem(){assert.equal(item.type,'LIST');return item;},
+      asTextItem(){assert.equal(item.type,'TEXT');return item;},
+      asParagraphTextItem(){assert.equal(item.type,'PARAGRAPH_TEXT');return item;},
+      asCheckboxItem(){assert.equal(item.type,'CHECKBOX');return item;},
+    });
     const file={trashed:false,getId:()=>formId,isTrashed(){return this.trashed;},setTrashed(value){if(failTrash)throw Error(failTrash==='denied'?'Access denied: DriveApp.':'TRASH_FAILED');this.trashed=value;return this;},moveTo(folder){if(failMove)throw Error('MOVE_FAILED');this.parent=folder.getId();return this;},setName(name){this.name=name;return this;}};files.set(formId,file);
-    const form={id:formId,title,responses:[],accepting:false,getId:()=>formId,getItems:()=>items,getItemById:key=>items.find(item=>item.id===String(key)),
-      add(type){const item={id:String(++id),type,title:'',choices:[],getId(){return this.id;},getType(){return this.type;},getTitle(){return this.title;},setTitle(value){this.title=value;return this;},setHelpText(value){this.help=value;return this;},setRequired(value){this.required=value;return this;},asListItem(){return this;},asTextItem(){return this;},asParagraphTextItem(){return this;},asCheckboxItem(){return this;},setChoiceValues(values){if(failChoice)throw Error('CHOICE_FAILED');this.choices=values;return this;},getChoices(){return this.choices.map(value=>({getValue:()=>value}));},createResponse:value=>({value})};items.push(item);return item;},
-      addListItem(){return this.add('LIST');},addTextItem(){return this.add('TEXT');},addParagraphTextItem(){return this.add('PARAGRAPH_TEXT');},addCheckboxItem(){return this.add('CHECKBOX');},deleteItem(item){items.splice(items.indexOf(item),1);},setTitle(value){this.title=value;},setDescription(value){this.description=value;},setCollectEmail(){},setLimitOneResponsePerUser(){},setPublishingSummary(){},setPublished(){},setAcceptingResponses(value){this.accepting=value;},
+    const form={id:formId,title,responses:[],accepting:false,getId:()=>formId,getItems:()=>items.map(generic),getItemById:key=>generic(items.find(item=>item.id===String(key))),
+      add(type){const item={id:String(++id),type,title:'',choices:[],getId(){return this.id;},getType(){return this.type;},getTitle(){return this.title;},setTitle(value){this.title=value;return this;},setHelpText(value){this.help=value;return this;},setRequired(value){this.required=value;return this;},setChoiceValues(values){if(failChoice)throw Error('CHOICE_FAILED');this.choices=values;return this;},getChoices(){return this.choices.map(value=>({getValue:()=>value}));},createResponse:value=>({value})};items.push(item);return item;},
+      addListItem(){return this.add('LIST');},addTextItem(){return this.add('TEXT');},addParagraphTextItem(){return this.add('PARAGRAPH_TEXT');},addCheckboxItem(){return this.add('CHECKBOX');},deleteItem(item){items.splice(items.findIndex(found=>found.getId()===item.getId()),1);},setTitle(value){this.title=value;},setDescription(value){this.description=value;},setCollectEmail(){},setLimitOneResponsePerUser(){},setPublishingSummary(){},setPublished(){},setAcceptingResponses(value){this.accepting=value;},
       getResponses(){return this.responses;},getResponse(key){return this.responses.find(r=>r.getId()===key);},deleteResponse(key){this.responses=this.responses.filter(r=>r.getId()!==key);},createResponse(){return {withItemResponse(){return this;},toPrefilledUrl:()=>`https://docs.google.com/forms/d/${formId}/viewform`};}};forms.set(formId,form);return form;
   }
   const ctx={console,PropertiesService:{getScriptProperties:()=>({getProperty:key=>properties.get(key)||null,setProperty:(key,value)=>properties.set(key,value)})},Session:{getActiveUser:()=>({getEmail:()=>email})},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},FormApp:{create:createForm,openById:key=>{if(!forms.has(key)||files.get(key).trashed)throw Error('FORM_UNAVAILABLE');return forms.get(key);}},DriveApp:{createFolder:name=>folder(name,null),getFolderById:key=>folders.get(key),getFileById:key=>files.get(key)}};
@@ -28,6 +34,21 @@ function fixture(){
   return {run:r=>ctx.ksisRegistration(r),event,properties,forms,files,folders,createForm,addResponse,setEmail:value=>email=value,failMove:value=>failMove=value,failTrash:value=>failTrash=value,failChoice:value=>failChoice=value};
 }
 const request={action:'sync',formStructure:'per-event',eventId:'event-1',title:'행사',date:'2027-01-15',category:'forum',enabled:true};
+test('fresh paid forms and all extra question types save on the first attempt with typed add-item results',()=>{
+  const f=fixture();
+  assert.equal(typeof f.createForm('typed item contract').addListItem().asListItem,'undefined');
+  const questions=[
+    {id:'name',type:'text',title:'이름'}, {id:'phone',type:'text',title:'전화번호'}, {id:'payer',type:'text',title:'입금자'},
+    ...['text','paragraph','select','checkbox'].map(type=>({id:'q-'+type,type,title:type,options:['첫째','둘째']})),
+  ];
+  for(let index=0;index<3;index++){
+    const id='fresh-paid-'+index;
+    const result=f.run({...request,eventId:id,registrationQuestions:questions,participationFee:[{grade:'일반인',amount:50000}]});
+    assert.equal(result.eventId,id);assert.equal(f.event(id).ready,true);assert.equal(f.event(id).enabled,true);
+    assert.equal(Object.keys(f.event(id).questionItems).length,4);
+  }
+  assert.equal(f.properties.has('KSIS_LAST_SYNC_FAILURE'),false);
+});
 test('per-event forms use year/month folders and prepare all 12 months; retries and edits reuse the form',()=>{
   const f=fixture();const info=f.run(request);assert.equal(info.schemaVersion,4);
   assert.equal(f.forms.size,1);assert.equal(f.folders.size,14);
@@ -48,6 +69,15 @@ test('partial form preparation retries without duplication and trash failure blo
 });
 test('signed-out/unauthorized callers and invalid event dates never create forms',()=>{
   const f=fixture();f.setEmail('stranger');assert.throws(()=>f.run(request),/FORBIDDEN/);f.setEmail('');assert.throws(()=>f.run(request),/SIGN_IN_REQUIRED/);f.setEmail('owner');assert.throws(()=>f.run({...request,date:'2027-02-30'}),/INVALID_EVENT_DATE/);assert.equal(f.forms.size,0);
+});
+test('failed preparation records its stage without request details and rethrows the original error',()=>{
+  const f=fixture();f.failMove(true);
+  assert.throws(()=>f.run({...request,title:'private event title'}),/MOVE_FAILED/);
+  const diagnostic=JSON.parse(f.properties.get('KSIS_LAST_SYNC_FAILURE'));
+  assert.equal(diagnostic.stage,'move-form');assert.equal(diagnostic.eventId,request.eventId);
+  assert.equal(diagnostic.message,'MOVE_FAILED');assert.ok(diagnostic.at);
+  assert.equal(JSON.stringify(diagnostic).includes('private event title'),false);
+  f.failMove(false);f.run(request);assert.equal(f.forms.size,1);
 });
 test('migration preserves shared form and old roster, removes only the old choice and routes response deletion correctly',()=>{
   const f=fixture(),form=f.createForm('공용');const eventItem=form.addListItem().setTitle('참가할 행사').setChoiceValues(['old','other']);

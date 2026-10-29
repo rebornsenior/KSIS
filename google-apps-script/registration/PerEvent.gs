@@ -13,12 +13,14 @@ function ksisSyncPerEvent_(request,email) {
   const feeRows=ksisNormalizeFees_(request.participationFee);
   const questions=ksisNormalizeQuestions_(request.registrationQuestions);
   const lock=LockService.getScriptLock();lock.waitLock(30000);
+  let stage='load-event';
   try {
     const config=JSON.parse(store.getProperty('KSIS_REGISTRATION') || '{}');
     const key='KSIS_EVENT_'+request.eventId;
     let event=JSON.parse(store.getProperty(key) || 'null') || (config.events || {})[request.eventId];
     const year=request.date.slice(0,4), month=request.date.slice(5,7);
     if(!request.enabled) {
+      stage='close-form';
       if(event?.structure==='per-event') {
         // A confirmed closure must remain retryable even when the trashed file
         // can no longer be retrieved by Drive for the current caller.
@@ -47,20 +49,28 @@ function ksisSyncPerEvent_(request,email) {
       return {eventId:request.eventId,disabled:true,year,schemaVersion:4,trashPending:event?.trashPending===true};
     }
     if(!event || event.structure!=='per-event') {
+      stage='create-form';
       const archives=event ? [event] : [];
       const form=FormApp.create(ksisFormTitle_(request.date,request.title),false);
       event={structure:'per-event',formId:form.getId(),archivedForms:archives,readers:access.readers || access.managers,deleters:access.deleters || access.managers,enabled:false,ready:false};
       store.setProperty(key,JSON.stringify(event));
     }
+    stage='get-drive-file';
     const file=DriveApp.getFileById(event.formId);
     // Re-enable restores the same form and its responses, never creates a duplicate.
+    stage='restore-form';
     if(file.isTrashed()) file.setTrashed(false);
+    stage='open-form';
     const form=FormApp.openById(event.formId);
+    stage='prepare-folders';
     const folder=ksisEventFolder_(store,year,month);
+    stage='move-form';
     file.moveTo(folder);
+    stage='set-title';
     file.setName(ksisFormTitle_(request.date,request.title));
     form.setTitle(ksisFormTitle_(request.date,request.title));
     const eventItemTitle='참가할 행사';
+    stage='event-question';
     if(!event.eventItemId) {
       const matches=form.getItems().filter(item=>item.getTitle()===eventItemTitle && String(item.getType())==='LIST');
       if(matches.length>1)throw new Error('AMBIGUOUS_FORM_ITEMS');
@@ -69,6 +79,7 @@ function ksisSyncPerEvent_(request,email) {
     }
     const core=[['name','nameItemId','신청자 이름'],['phone','phoneItemId','전화번호'],['payer','payerItemId','입금자명']];
     for(const [id,field,legacyTitle] of core) {
+      stage='question-'+id;
       const question=questions.find(item=>item.id===id);
       if(!event[field]) {
         const matches=form.getItems().filter(item=>item.getTitle()===legacyTitle && String(item.getType())==='TEXT');
@@ -78,24 +89,37 @@ function ksisSyncPerEvent_(request,email) {
       }
       form.getItemById(Number(event[field])).asTextItem().setTitle(question.title).setHelpText(question.help).setRequired(question.required);
     }
-    ksisSyncExtraQuestions_(form,event,questions,store,key);
-    ksisSyncFeeItem_(form,event,feeRows,store,key);
+    stage='extra-questions';ksisSyncExtraQuestions_(form,event,questions,store,key);
+    stage='fee-question';ksisSyncFeeItem_(form,event,feeRows,store,key);
     const category=request.category || event.category || 'other';
     const label=request.date.replace(/-/g,'.')+' | '+labels[category]+' | '+JSON.stringify(request.title.trim());
     event.previousValues=Array.from(new Set([...(event.previousValues || []),event.eventValue].filter(value=>value && value!==label)));
     event.eventValue=label;event.year=year;event.month=month;event.date=request.date;event.title=request.title.trim();event.category=category;event.participationFee=feeRows;event.registrationQuestions=questions;event.labelVersion=2;event.folderId=folder.getId();
     store.setProperty(key,JSON.stringify(event));
+    stage='event-choice';
     form.getItemById(Number(event.eventItemId)).asListItem().setChoiceValues([label]);
+    stage='retire-annual';
     for(const old of event.archivedForms || []) {
       if(old.enabled!==false){ksisRetireAnnual_(old,request.eventId,store);old.enabled=false;}
     }
     const feeText=feeRows.length ? '\n\n참가비 안내\n'+feeRows.map(row=>'- '+row.grade+': '+row.amount.toLocaleString('ko-KR')+'원'+(row.note?' ('+row.note+')':'')).join('\n') : '\n\n참가비가 없는 행사입니다.';
     form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.'+feeText);
+    stage='form-settings';
     form.setCollectEmail(false);form.setLimitOneResponsePerUser(false);form.setPublishingSummary(false);
-    form.setPublished(true);form.setAcceptingResponses(true);
+    stage='publish-form';form.setPublished(true);
+    stage='accept-responses';form.setAcceptingResponses(true);
     event.enabled=true;event.trashed=false;event.trashPending=false;event.ready=true;
     store.setProperty(key,JSON.stringify(event));
+    stage='registration-link';
     return ksisEventInfo_(request.eventId,event,form);
+  } catch(error) {
+    // Keep only the last failure, inside the private project. No request body,
+    // answers, account credentials or roster is written to this diagnostic.
+    try {store.setProperty('KSIS_LAST_SYNC_FAILURE',JSON.stringify({
+      at:new Date().toISOString(),eventId:request.eventId,stage,
+      message:String(error.message || error).slice(0,500)
+    }));} catch(_) { /* Diagnostics must not replace the original error. */ }
+    throw error;
   } finally {lock.releaseLock();}
 }
 
@@ -150,6 +174,9 @@ function ksisSyncExtraQuestions_(form,event,questions,store,key) {
       item=create[question.type]();saved[question.id]={itemId:String(item.getId()),type:question.type};
       event.questionItems=saved;store.setProperty(key,JSON.stringify(event));
     }
+    // add*Item() returns a typed item, which has no as*Item() cast methods.
+    // Read it as a generic Item before casting, for both new and existing items.
+    item=form.getItemById(Number(item.getId()));
     item=question.type==='text'?item.asTextItem():question.type==='paragraph'?item.asParagraphTextItem():question.type==='select'?item.asListItem():item.asCheckboxItem();
     item.setTitle(question.title).setHelpText(question.help).setRequired(question.required);
     if(question.type==='select' || question.type==='checkbox')item.setChoiceValues(question.options);
@@ -165,7 +192,7 @@ function ksisSyncFeeItem_(form,event,fees,store,key) {
   if(!item) {
     item=form.addListItem();event.feeItemId=String(item.getId());store.setProperty(key,JSON.stringify(event));
   }
-  item=item.asListItem();
+  item=form.getItemById(Number(item.getId())).asListItem();
   item.setTitle('회원 등급 / 참가 유형').setHelpText('본인의 등급을 선택하면 해당 참가비와 안내 사항을 확인할 수 있습니다.').setRequired(true);
   item.setChoiceValues(fees.map(fee=>fee.grade+' · '+fee.amount.toLocaleString('ko-KR')+'원'+(fee.note?' ('+fee.note+')':'')));
 }
