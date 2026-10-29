@@ -23,11 +23,15 @@ const Navbar = () => {
     { name: 'HOME', path: ROUTES.HOME },
     { name: 'ABOUT', path: ROUTES.ABOUT },
     { name: 'PROJECT', path: '/?goto=project', isHash: true },
+    { name: 'COMPANIES', path: `${ROUTES.ARCHIVE}?tab=shopping`, isMember: true },
     { name: 'CALENDAR', path: ROUTES.CALENDAR },
     { name: 'BOARD', path: ROUTES.COMMUNITY },
   ];
 
   const isLinkActive = (item: typeof navItems[0]) => {
+    if (item.isMember) {
+      return location.pathname === ROUTES.ARCHIVE && new URLSearchParams(location.search).get('tab') === 'shopping';
+    }
     if (item.isHash) {
       return location.pathname === ROUTES.HOME && location.search.includes('goto=project');
     }

@@ -33,7 +33,7 @@ export default function MemberCompaniesSection() {
     <section id="member-companies-section" aria-labelledby="member-companies-heading" className="py-12 md:py-24 px-6 md:px-12 lg:px-16 xl:px-20 bg-white">
       <div className="max-w-[1720px] mx-auto space-y-10 md:space-y-16">
         <div className="text-center space-y-4">
-          <h2 id="member-companies-heading" className="text-[8vw] md:text-[clamp(40px,6.7vw,96px)] text-[#002147] opacity-10 font-bold tracking-tight md:tracking-[-0.05em] leading-tight">MEMBER COMPANIES</h2>
+          <h2 id="member-companies-heading" className="text-[15vw] md:text-[96px] text-[#002147] opacity-[0.10] md:opacity-10 md:pt-[20px] font-bold tracking-tight md:tracking-[-0.05em] whitespace-nowrap overflow-visible relative left-0 md:left-0 w-full md:w-auto text-center md:text-center mb-0">회원사 소개</h2>
           <p className="text-[14px] md:text-lg text-slate-700 font-medium break-keep leading-[1.6] tracking-[-0.02em]">
             다양한 분야에서 활동하는 회원사들의 브랜드와 서비스를 소개합니다.<br />
             회원사 간 교류와 협력을 통해 새로운 기회를 만들고 함께 성장하는 네트워크를 이어갑니다.
