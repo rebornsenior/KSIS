@@ -3,19 +3,27 @@
   "categories": [
     {
       "id": "식품",
-      "label": "식품"
-    },
-    {
-      "id": "제조",
       "label": "제조"
     },
     {
+      "id": "제조",
+      "label": "교육"
+    },
+    {
       "id": "기타",
-      "label": "기타"
+      "label": "식품"
     },
     {
       "id": "industry-e879d17d-c34c-4bf4-9f3d-bac7ba27af76",
       "label": "디자인"
+    },
+    {
+      "id": "industry-8997056b-d200-49a9-a6b7-5c644b091386",
+      "label": "출판 | 콘텐츠"
+    },
+    {
+      "id": "industry-c54bea44-63a1-43fe-b731-cd60ae1624ac",
+      "label": "기타"
     }
   ]
 }
