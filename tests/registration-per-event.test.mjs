@@ -114,6 +114,19 @@ test('editing a response-free form replaces all defaults with custom questions',
   assert.deepEqual(f.forms.get(after.formId).getItems().map(item=>item.getTitle()),['참가할 행사','참석 목적']);
   assert.equal(f.run({action:'list',eventId:'replace-defaults'}).records.length,0);
 });
+test('editing an answered form publishes a new form and preserves the previous roster',()=>{
+  const f=fixture();f.run(request);
+  const old=f.event('event-1');f.addResponse(old,'old-answer');
+  const updated={...request,registrationQuestions:[{id:'q-purpose',type:'text',title:'참석 목적',required:true}]};
+  f.run(updated);
+  const current=f.event('event-1');
+  assert.notEqual(current.formId,old.formId);
+  assert.equal(f.forms.get(old.formId).accepting,false);
+  assert.equal(f.forms.get(old.formId).responses.length,1);
+  assert.deepEqual(f.forms.get(current.formId).getItems().map(item=>item.getTitle()),['참가할 행사','참석 목적']);
+  assert.equal(f.run({action:'list',eventId:'event-1'}).records.length,1);
+  f.run(updated);assert.equal(f.forms.size,2);
+});
 test('per-event forms use year/month folders and prepare all 12 months; retries and edits reuse the form',()=>{
   const f=fixture();const info=f.run(request);assert.equal(info.schemaVersion,4);
   assert.equal(f.forms.size,1);assert.equal(f.folders.size,14);

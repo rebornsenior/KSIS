@@ -48,6 +48,18 @@ function ksisSyncPerEvent_(request,email) {
       }
       return {eventId:request.eventId,disabled:true,year,schemaVersion:4,trashPending:event?.trashPending===true};
     }
+    if(event?.structure==='per-event' && event.ready && event.enabled &&
+       ksisNeedsFormRevision_(event,questions,feeRows)) {
+      stage='revise-form';
+      const previousForm=FormApp.openById(event.formId);
+      if(previousForm.getResponses().length) {
+        const archived=event.archivedForms || [];
+        const old={...event};delete old.archivedForms;
+        const revised=FormApp.create(ksisFormTitle_(request.date,request.title),false);
+        event={structure:'per-event',formId:revised.getId(),archivedForms:[old,...archived],readers:old.readers,deleters:old.deleters,enabled:false,ready:false};
+        store.setProperty(key,JSON.stringify(event));
+      }
+    }
     if(!event || event.structure!=='per-event') {
       stage='create-form';
       const archives=event ? [event] : [];
@@ -118,7 +130,11 @@ function ksisSyncPerEvent_(request,email) {
     form.getItemById(Number(event.eventItemId)).asListItem().setChoiceValues([label]);
     stage='retire-annual';
     for(const old of event.archivedForms || []) {
-      if(old.enabled!==false){ksisRetireAnnual_(old,request.eventId,store);old.enabled=false;}
+      if(old.enabled!==false){
+        if(old.structure==='per-event')FormApp.openById(old.formId).setAcceptingResponses(false);
+        else ksisRetireAnnual_(old,request.eventId,store);
+        old.enabled=false;
+      }
     }
     const feeText=feeRows.length ? '\n\n참가비 안내\n'+feeRows.map(row=>'- '+row.grade+': '+row.amount.toLocaleString('ko-KR')+'원'+(row.note?' ('+row.note+')':'')).join('\n') : '\n\n참가비가 없는 행사입니다.';
     const requestedFields=questions.filter(item=>['name','phone','payer'].includes(item.id)).map(item=>item.title);
@@ -142,6 +158,13 @@ function ksisSyncPerEvent_(request,email) {
     }));} catch(_) { /* Diagnostics must not replace the original error. */ }
     throw error;
   } finally {lock.releaseLock();}
+}
+
+function ksisNeedsFormRevision_(event,questions,fees) {
+  // A form with answers keeps its original item IDs and response history.
+  // Changes to questions or fee choices are published through a new form.
+  return JSON.stringify(event.registrationQuestions || ksisNormalizeQuestions_(null))!==JSON.stringify(questions) ||
+    JSON.stringify(event.participationFee || [])!==JSON.stringify(fees);
 }
 
 function ksisNormalizeFees_(value) {
