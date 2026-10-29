@@ -49,6 +49,71 @@ test('fresh paid forms and all extra question types save on the first attempt wi
   }
   assert.equal(f.properties.has('KSIS_LAST_SYNC_FAILURE'),false);
 });
+test('a new form saves when the payer question is removed',()=>{
+  const f=fixture();
+  const result=f.run({...request,eventId:'no-payer',registrationQuestions:[
+    {id:'name',type:'text',title:'신청자 이름',required:true},
+    {id:'phone',type:'text',title:'전화번호',required:true},
+  ]});
+  const event=f.event('no-payer'),form=f.forms.get(event.formId);
+  assert.equal(result.eventId,'no-payer');
+  assert.equal(event.payerItemId,undefined);
+  assert.deepEqual(form.getItems().map(item=>item.getTitle()),['참가할 행사','신청자 이름','전화번호']);
+  assert.doesNotMatch(form.description,/입금자명/);
+  assert.equal(f.run({action:'list',eventId:'no-payer'}).records.length,0);
+});
+
+test('a new form saves with every default question removed and only custom questions',()=>{
+  const f=fixture();
+  const result=f.run({...request,eventId:'custom-only',registrationQuestions:[
+    {id:'q-company',type:'text',title:'소속',required:true},
+    {id:'q-session',type:'select',title:'참석 시간',required:true,options:['오전','오후']},
+  ]});
+  const event=f.event('custom-only'),form=f.forms.get(event.formId);
+  assert.equal(result.eventId,'custom-only');
+  assert.equal(event.nameItemId,undefined);
+  assert.equal(event.phoneItemId,undefined);
+  assert.equal(event.payerItemId,undefined);
+  assert.deepEqual(form.getItems().map(item=>item.getTitle()),['참가할 행사','소속','참석 시간']);
+  assert.doesNotMatch(form.description,/신청자 이름|전화번호|입금자명/);
+  assert.equal(f.run({action:'list',eventId:'custom-only'}).records.length,0);
+});
+test('retrying a partly created form removes deleted defaults and keeps its form',()=>{
+  const f=fixture();
+  f.failChoice(true);
+  assert.throws(()=>f.run({...request,eventId:'retry',registrationQuestions:[
+    {id:'name',type:'text',title:'신청자 이름',required:true},
+    {id:'phone',type:'text',title:'전화번호',required:true},
+    {id:'payer',type:'text',title:'입금자명',required:false},
+  ]}),/CHOICE_FAILED/);
+  const before=f.event('retry');
+  assert.ok(before.payerItemId);
+  f.failChoice(false);
+  f.run({...request,eventId:'retry',registrationQuestions:[
+    {id:'name',type:'text',title:'신청자 이름',required:true},
+    {id:'phone',type:'text',title:'전화번호',required:true},
+  ]});
+  const after=f.event('retry');
+  assert.equal(after.formId,before.formId);
+  assert.equal(after.payerItemId,undefined);
+  assert.deepEqual(f.forms.get(after.formId).getItems().map(item=>item.getTitle()),['참가할 행사','신청자 이름','전화번호']);
+});
+
+test('editing a response-free form replaces all defaults with custom questions',()=>{
+  const f=fixture();
+  f.run({...request,eventId:'replace-defaults'});
+  const before=f.event('replace-defaults');
+  f.run({...request,eventId:'replace-defaults',registrationQuestions:[
+    {id:'q-custom',type:'paragraph',title:'참석 목적',required:true},
+  ]});
+  const after=f.event('replace-defaults');
+  assert.equal(after.formId,before.formId);
+  assert.equal(after.nameItemId,undefined);
+  assert.equal(after.phoneItemId,undefined);
+  assert.equal(after.payerItemId,undefined);
+  assert.deepEqual(f.forms.get(after.formId).getItems().map(item=>item.getTitle()),['참가할 행사','참석 목적']);
+  assert.equal(f.run({action:'list',eventId:'replace-defaults'}).records.length,0);
+});
 test('per-event forms use year/month folders and prepare all 12 months; retries and edits reuse the form',()=>{
   const f=fixture();const info=f.run(request);assert.equal(info.schemaVersion,4);
   assert.equal(f.forms.size,1);assert.equal(f.folders.size,14);

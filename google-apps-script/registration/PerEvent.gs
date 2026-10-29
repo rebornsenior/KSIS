@@ -78,16 +78,34 @@ function ksisSyncPerEvent_(request,email) {
       event.eventItemId=String(item.getId());store.setProperty(key,JSON.stringify(event));
     }
     const core=[['name','nameItemId','신청자 이름'],['phone','phoneItemId','전화번호'],['payer','payerItemId','입금자명']];
+    const types={text:'TEXT',paragraph:'PARAGRAPH_TEXT',select:'LIST',checkbox:'CHECKBOX'};
+    const create={text:()=>form.addTextItem(),paragraph:()=>form.addParagraphTextItem(),select:()=>form.addListItem(),checkbox:()=>form.addCheckboxItem()};
     for(const [id,field,legacyTitle] of core) {
       stage='question-'+id;
       const question=questions.find(item=>item.id===id);
-      if(!event[field]) {
-        const matches=form.getItems().filter(item=>item.getTitle()===legacyTitle && String(item.getType())==='TEXT');
+      let item=event[field] && form.getItems().find(found=>String(found.getId())===String(event[field]));
+      if(!question) {
+        if(item) {
+          if(form.getResponses().length)throw new Error('QUESTION_HAS_RESPONSES');
+          form.deleteItem(item);
+        }
+        if(event[field]){delete event[field];store.setProperty(key,JSON.stringify(event));}
+        continue;
+      }
+      if(item && String(item.getType())!==types[question.type]) {
+        if(form.getResponses().length)throw new Error('QUESTION_HAS_RESPONSES');
+        form.deleteItem(item);item=null;delete event[field];store.setProperty(key,JSON.stringify(event));
+      }
+      if(!item) {
+        const matches=form.getItems().filter(found=>found.getTitle()===legacyTitle && String(found.getType())===types[question.type]);
         if(matches.length>1)throw new Error('AMBIGUOUS_FORM_ITEMS');
-        const item=matches[0] || form.addTextItem();
+        item=matches[0] || create[question.type]();
         event[field]=String(item.getId());store.setProperty(key,JSON.stringify(event));
       }
-      form.getItemById(Number(event[field])).asTextItem().setTitle(question.title).setHelpText(question.help).setRequired(question.required);
+      item=form.getItemById(Number(event[field]));
+      item=question.type==='text'?item.asTextItem():question.type==='paragraph'?item.asParagraphTextItem():question.type==='select'?item.asListItem():item.asCheckboxItem();
+      item.setTitle(question.title).setHelpText(question.help).setRequired(question.required);
+      if(question.type==='select' || question.type==='checkbox')item.setChoiceValues(question.options);
     }
     stage='extra-questions';ksisSyncExtraQuestions_(form,event,questions,store,key);
     stage='fee-question';ksisSyncFeeItem_(form,event,feeRows,store,key);
@@ -103,7 +121,10 @@ function ksisSyncPerEvent_(request,email) {
       if(old.enabled!==false){ksisRetireAnnual_(old,request.eventId,store);old.enabled=false;}
     }
     const feeText=feeRows.length ? '\n\n참가비 안내\n'+feeRows.map(row=>'- '+row.grade+': '+row.amount.toLocaleString('ko-KR')+'원'+(row.note?' ('+row.note+')':'')).join('\n') : '\n\n참가비가 없는 행사입니다.';
-    form.setDescription('이 행사 전용 참가 신청서입니다. 신청자 이름, 전화번호, 입금자명을 입력해 주세요. 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.'+feeText);
+    const requestedFields=questions.filter(item=>['name','phone','payer'].includes(item.id)).map(item=>item.title);
+    const fieldInstruction=requestedFields.length?' '+requestedFields.join(', ')+' 항목을 입력해 주세요.':'';
+    const payerInstruction=questions.some(item=>item.id==='payer')?' 무료 참가 대상자는 입금자명에 ‘해당 없음’을 입력해 주세요.':'';
+    form.setDescription('이 행사 전용 참가 신청서입니다.'+fieldInstruction+payerInstruction+feeText);
     stage='form-settings';
     form.setCollectEmail(false);form.setLimitOneResponsePerUser(false);form.setPublishingSummary(false);
     stage='publish-form';form.setPublished(true);
@@ -159,7 +180,10 @@ function ksisSyncExtraQuestions_(form,event,questions,store,key) {
   for(const id of Object.keys(saved)) {
     if(ids.has(id))continue;
     const old=form.getItems().find(item=>String(item.getId())===String(saved[id].itemId));
-    if(old)form.deleteItem(old);
+    if(old) {
+      if(form.getResponses().length)throw new Error('QUESTION_HAS_RESPONSES');
+      form.deleteItem(old);
+    }
     delete saved[id];event.questionItems=saved;store.setProperty(key,JSON.stringify(event));
   }
   const types={text:'TEXT',paragraph:'PARAGRAPH_TEXT',select:'LIST',checkbox:'CHECKBOX'};
@@ -168,6 +192,7 @@ function ksisSyncExtraQuestions_(form,event,questions,store,key) {
     let mapping=saved[question.id];
     let item=mapping && form.getItems().find(found=>String(found.getId())===String(mapping.itemId));
     if(item && String(item.getType())!==types[question.type]) {
+      if(form.getResponses().length)throw new Error('QUESTION_HAS_RESPONSES');
       form.deleteItem(item);item=null;delete saved[question.id];store.setProperty(key,JSON.stringify(event));
     }
     if(!item) {

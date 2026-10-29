@@ -26,7 +26,8 @@ function ksisRegistration(request) {
   if (!event) throw new Error('EVENT_NOT_CONFIGURED');
   const allowed = request.action === 'delete' ? event.deleters : event.readers;
   if (!Array.isArray(allowed) || !allowed.some(value => value.toLowerCase() === email)) throw new Error('FORBIDDEN');
-  for (const key of ['formId', 'eventItemId', 'eventValue', 'nameItemId', 'phoneItemId', 'payerItemId']) {
+  const requiredKeys=event.structure==='per-event' ? ['formId','eventItemId','eventValue'] : ['formId','eventItemId','eventValue','nameItemId','phoneItemId','payerItemId'];
+  for (const key of requiredKeys) {
     if (typeof event[key] !== 'string' || !event[key]) throw new Error('INVALID_EVENT_CONFIG');
   }
   const sources=event.structure==='per-event' ? [event,...(event.archivedForms || [])] : [event];
@@ -36,9 +37,10 @@ function ksisRegistration(request) {
     const answers={};
     response.getItemResponses().forEach(item=>{answers[String(item.getItem().getId())]=item.getResponse();});
     if(![mapping.eventValue,...(mapping.previousValues || [])].includes(answers[mapping.eventItemId]))return null;
+    const answer=field=>field && Object.prototype.hasOwnProperty.call(answers,field) ? answers[field] : '';
     return {id:(event.structure==='per-event'?index+':':'')+response.getId(),eventId:request.eventId,
-      name:String(answers[mapping.nameItemId] || ''),phone:String(answers[mapping.phoneItemId] || ''),
-      payer:String(answers[mapping.payerItemId] || ''),submittedAt:response.getTimestamp().toISOString()};
+      name:String(answer(mapping.nameItemId) || ''),phone:String(answer(mapping.phoneItemId) || ''),
+      payer:String(answer(mapping.payerItemId) || ''),submittedAt:response.getTimestamp().toISOString()};
   }
   if(request.action==='list') {
     const records=[];

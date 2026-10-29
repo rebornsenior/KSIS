@@ -335,10 +335,10 @@ if (!localMode && location.origin !== 'https://www.rebornsenior.com') {
       if(confirmedClosedRegistrations.has(eventId)) return;
       const result=await window.KSISRegistration.call({action:'sync',formStructure:'per-event',eventId,title,date,enabled:false});
       if(result?.eventId!==eventId || result.disabled!==true || result.schemaVersion!==4) throw new Error('CLOSE_NOT_CONFIRMED');
-      if(result.trashPending) window.alert('신청 접수는 종료했습니다. 폼을 휴지통으로 옮길 권한이 없어 파일은 보관됩니다. 필요하면 폼 소유자 계정에서 정리해 주세요.');
+      if(result.trashPending) throw new Error('FORM_TRASH_PERMISSION_REQUIRED');
       confirmedClosedRegistrations.add(eventId);
     } catch(error) {
-      window.alert(error.message==='API_DEPLOYMENT_NOT_ACCESSIBLE'?'구글 신청 관리 API 배포에 접근할 수 없어 작업을 중단했습니다. 폼 삭제 문제가 아니라 Apps Script 배포 ID·실행 접근 권한 확인이 필요합니다.':'구글 폼의 행사 접수를 닫지 못해 작업을 중단했습니다. 구글 연결과 해당 폼의 접근 권한을 확인해 주세요. ('+error.message+')');
+      window.alert(error.message==='FORM_TRASH_PERMISSION_REQUIRED'?'일정에 연결된 구글 폼을 휴지통으로 옮길 권한이 없어 일정 삭제를 중단했습니다. 폼 소유자 계정으로 다시 시도해 주세요.':error.message==='API_DEPLOYMENT_NOT_ACCESSIBLE'?'구글 신청 관리 API 배포에 접근할 수 없어 작업을 중단했습니다. 폼 삭제 문제가 아니라 Apps Script 배포 ID·실행 접근 권한 확인이 필요합니다.':'구글 폼의 행사 접수를 닫지 못해 작업을 중단했습니다. 구글 연결과 해당 폼의 접근 권한을 확인해 주세요. ('+error.message+')');
       throw error;
     }
   };
