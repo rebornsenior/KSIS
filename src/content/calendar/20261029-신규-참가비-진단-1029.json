@@ -1,0 +1,70 @@
+{
+  "participationFee": {
+    "questions": [
+      {
+        "id": "name",
+        "type": "text",
+        "title": "신청자 이름",
+        "required": true
+      },
+      {
+        "id": "phone",
+        "type": "text",
+        "title": "전화번호",
+        "required": true
+      },
+      {
+        "id": "payer",
+        "type": "text",
+        "title": "입금자명",
+        "required": false
+      }
+    ],
+    "fees": [
+      {
+        "grade": "플래티넘 회원",
+        "amount": "10000",
+        "note": "10회 무료(이후 1만원/80% 할인)"
+      },
+      {
+        "grade": "골드 회원",
+        "amount": "15000",
+        "note": "5회 무료(이후 1만5천원/70% 할인)"
+      },
+      {
+        "grade": "실버 회원",
+        "amount": "25000",
+        "note": "2회 무료(이후 2만5천원/50% 할인)"
+      },
+      {
+        "grade": "브론즈 회원",
+        "amount": "35000",
+        "note": "30% 할인"
+      },
+      {
+        "grade": "추천동반인",
+        "amount": "20000",
+        "note": ""
+      },
+      {
+        "grade": "일반인",
+        "amount": "50000",
+        "note": ""
+      }
+    ],
+    "paid": true
+  },
+  "registrationEnabled": true,
+  "time": "10:00 - 11:00",
+  "date": "2026-11-07",
+  "location": "기능 확인용",
+  "registrationYear": "2026",
+  "title": "신규 참가비 진단 1029",
+  "rsvps": [
+    "기능 확인용"
+  ],
+  "registrationEventId": "evt-f2db5291-9e5b-42ae-81af-bce0df798eea",
+  "description": "참가비 포함 신규 생성 진단용 초안",
+  "registrationForm": "https://docs.google.com/forms/d/e/1FAIpQLSdwmKVWEWZt0YaeA8UeCMjdLn_ySx6Jl5grzQKBibgrFLG72w/viewform?usp=pp_url&entry.1191795224=2026.11.07+%7C+%EC%88%98%EC%9D%B5+%EC%8B%A4%EB%AC%B4+%7C+%22%EC%8B%A0%EA%B7%9C+%EC%B0%B8%EA%B0%80%EB%B9%84+%EC%A7%84%EB%8B%A8+1029%22",
+  "category": "monetize"
+}
